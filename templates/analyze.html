@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Analyze Resume - Resume Pro{% endblock %}
+
+{% block content %}
+<section class="analyze-section py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <!-- Page Header -->
+                <div class="text-center mb-4 animate-fade-in">
+                    <h1 class="page-title">
+                        <i class="bi bi-search me-2"></i>Job Description Analysis
+                    </h1>
+                    <p class="page-subtitle">
+                        Paste a job description to compare your resume skills against the job requirements.
+                        You can also skip this step for a general analysis.
+                    </p>
+                </div>
+                
+                <!-- Analysis Form Card -->
+                <div class="glass-card animate-slide-up">
+                    <form action="{{ url_for('analyze', resume_id=resume_id) }}" method="POST" id="analyze-form">
+                        <div class="card-body-custom">
+                            <!-- Job Description Input -->
+                            <div class="mb-4">
+                                <label for="job-description" class="form-label fw-semibold">
+                                    <i class="bi bi-clipboard-data me-1"></i> Job Description
+                                </label>
+                                <textarea class="form-control job-textarea" id="job-description" 
+                                          name="job_description" rows="12"
+                                          placeholder="Paste the complete job description here...
+
+Example:
+We are looking for a Data Scientist with experience in Python, Machine Learning, SQL, and TensorFlow. The candidate should have knowledge of Deep Learning, NLP, and data visualization tools like Tableau or Power BI..."></textarea>
+                                <div class="form-text mt-2">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Tip: Copy the entire job posting for the most accurate skill comparison.
+                                </div>
+                            </div>
+                            
+                            <!-- Sample JD Helper -->
+                            <div class="sample-jd-section mb-4">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="load-sample-jd">
+                                    <i class="bi bi-file-text me-1"></i> Load Sample Job Description
+                                </button>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="d-flex justify-content-center gap-3">
+                                <button type="submit" class="btn btn-primary btn-lg hero-btn">
+                                    <i class="bi bi-bar-chart-line me-2"></i> Analyze & Compare
+                                </button>
+                                <a href="{{ url_for('dashboard', resume_id=resume_id) }}" 
+                                   class="btn btn-outline-secondary btn-lg">
+                                    <i class="bi bi-skip-forward me-2"></i> Skip – General Analysis
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Info Cards -->
+                <div class="row g-3 mt-4">
+                    <div class="col-md-4">
+                        <div class="info-card animate-fade-in">
+                            <i class="bi bi-diagram-3 text-primary"></i>
+                            <h6>TF-IDF Analysis</h6>
+                            <small>Advanced text comparison using ML</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="info-card animate-fade-in">
+                            <i class="bi bi-intersect text-success"></i>
+                            <h6>Skill Matching</h6>
+                            <small>Identify matched & missing skills</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="info-card animate-fade-in">
+                            <i class="bi bi-percent text-warning"></i>
+                            <h6>Match Score</h6>
+                            <small>Get your compatibility percentage</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Load a sample job description for testing
+document.getElementById('load-sample-jd').addEventListener('click', function() {
+    const sampleJD = `Data Scientist - AI & Analytics Team
+
+We are looking for a talented Data Scientist to join our AI team. The ideal candidate will have strong skills in:
+
+Requirements:
+- Proficiency in Python, R, and SQL
+- Experience with Machine Learning and Deep Learning frameworks (TensorFlow, PyTorch, Scikit-learn)
+- Strong knowledge of Data Analysis, Pandas, NumPy, and Data Visualization
+- Experience with NLP and Natural Language Processing
+- Familiarity with cloud platforms (AWS or GCP)
+- Knowledge of Docker and Git for version control
+- Understanding of Data Structures and Algorithms
+- Experience with Tableau or Power BI for dashboard creation
+- Strong statistical analysis and mathematical skills
+
+Nice to have:
+- Experience with Kubernetes and CI/CD
+- Knowledge of REST APIs and Flask/Django
+- Publications in ML/AI conferences
+- Experience with Large Language Models and Transformers
+
+Education:
+- B.Tech/M.Tech in Computer Science, AI, Data Science, or related field`;
+    
+    document.getElementById('job-description').value = sampleJD;
+});
+</script>
+{% endblock %}

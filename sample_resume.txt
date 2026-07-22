@@ -1,0 +1,44 @@
+HARSHIT SHARMA
+harshit.sharma@email.com | +91 98765 43210 | Bangalore, India
+linkedin.com/in/harshitsharmadevelopment | github.com/harshitsharmadev
+
+PROFESSIONAL SUMMARY
+Highly motivated B.Tech Artificial Intelligence & Data Science student with practical experience building web interfaces and machine learning projects. Skilled in Python, SQL, and Flask web frameworks, with a deep understanding of data structures, algorithms, and predictive modeling.
+
+EDUCATION
+B.Tech in Artificial Intelligence and Data Science
+National Institute of Technology | CGPA: 8.5/10
+2022 - 2026
+
+TECHNICAL SKILLS
+- Programming Languages: Python, C++, SQL, HTML, CSS, JavaScript
+- Frameworks & Libraries: Flask, React, Pandas, NumPy, Scikit-learn, Matplotlib
+- Databases: MySQL, SQLite
+- DevOps & Tools: Git, GitHub, VS Code, Postman
+- Core CS: Data Structures and Algorithms, Object-Oriented Programming (OOP)
+
+EXPERIENCE
+Software Developer Intern
+TechSolutions Private Limited | Bangalore, India
+May 2025 - July 2025
+- Developed and integrated REST APIs using Python and Flask, improving response latency by 15%.
+- Structured database tables in SQLite to support modern dashboards, processing over 50,000 transaction records.
+- Utilized Git and GitHub for team version control, merging code through pull request cycles.
+
+PROJECTS
+1. Predictive Data Classifier (Python, Scikit-learn, Pandas)
+- Built a machine learning system to categorize customer feedback data.
+- Handled text pre-processing using regular expressions, splitting datasets, and training classifiers.
+- Achieved an accuracy score of 89% using Scikit-learn model parameters.
+
+2. Inventory Tracking Dashboard (Flask, HTML, CSS, JavaScript, SQLite)
+- Designed a fully responsive dashboard utilizing Bootstrap grids and native JavaScript functions.
+- Wrote raw SQL queries to manage items, quantities, and audit history logs.
+- Deployed locally, facilitating transaction logs and user sessions.
+
+CERTIFICATIONS
+- Python Data Analysis Specialization - Coursera (2024)
+- SQL Bootcamp Certificate - Udemy (2023)
+
+LANGUAGES
+English, Hindi

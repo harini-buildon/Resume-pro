@@ -1,0 +1,24 @@
+Job Title: Python & Machine Learning Associate
+
+We are looking for a Junior Python Developer & Machine Learning Associate to join our technology engineering team.
+
+Responsibilities:
+- Write clean, maintainable Python code for backend applications.
+- Develop, maintain, and optimize database tables using SQL (MySQL/SQLite/PostgreSQL).
+- Assist in preprocessing datasets, feature engineering, and model training using Pandas, NumPy, and Scikit-learn.
+- Help build, test, and host REST APIs and web services using Flask or Django.
+- Collaborate with developers using Git and GitHub version control platforms.
+- Debug web layouts (HTML, CSS, JavaScript, React) to integrate frontend pages with server backends.
+
+Requirements:
+- Strong knowledge of Python programming basics, lists, dictionaries, and classes.
+- Experience writing SQL queries, joining tables, and designing databases.
+- Familiarity with data analysis packages (Pandas, NumPy) and machine learning libraries (Scikit-learn).
+- Core understanding of Data Structures and Algorithms.
+- Prior exposure to Git commands, branches, and version control.
+- Good communication and collaboration skills.
+
+Nice to have:
+- Exposure to cloud services (AWS or Azure).
+- Knowledge of containerization with Docker.
+- Active GitHub portfolio demonstrating personal projects.

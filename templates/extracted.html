@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Extracted Text - Resume Pro{% endblock %}
+
+{% block content %}
+<section class="extracted-section py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-9">
+                <!-- Page Header -->
+                <div class="text-center mb-4 animate-fade-in">
+                    <h1 class="page-title">
+                        <i class="bi bi-file-text me-2"></i>Extracted Resume Text
+                    </h1>
+                    <p class="page-subtitle">
+                        Here is the text extracted from <strong>{{ filename }}</strong>. 
+                        Review it before proceeding to analysis.
+                    </p>
+                </div>
+                
+                <!-- Extracted Text Card -->
+                <div class="glass-card animate-slide-up">
+                    <div class="card-header-custom d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="bi bi-file-earmark-text me-2"></i>
+                            <strong>{{ filename }}</strong>
+                        </div>
+                        <span class="badge bg-primary-subtle text-primary">
+                            {{ text | length }} characters
+                        </span>
+                    </div>
+                    <div class="card-body-custom">
+                        <pre class="extracted-text-content">{{ text }}</pre>
+                    </div>
+                </div>
+                
+                <!-- Parsed Information Preview -->
+                {% if parsed_data %}
+                <div class="glass-card mt-4 animate-slide-up">
+                    <div class="card-header-custom">
+                        <i class="bi bi-person-badge me-2"></i>
+                        <strong>Quick Preview – Parsed Information</strong>
+                    </div>
+                    <div class="card-body-custom">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <i class="bi bi-person text-primary me-2"></i>
+                                    <strong>Name:</strong> {{ parsed_data.get('name', 'Not Found') }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <i class="bi bi-envelope text-primary me-2"></i>
+                                    <strong>Email:</strong> {{ parsed_data.get('email', 'Not Found') or 'Not Found' }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <i class="bi bi-phone text-primary me-2"></i>
+                                    <strong>Phone:</strong> {{ parsed_data.get('phone', 'Not Found') or 'Not Found' }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <i class="bi bi-code-slash text-primary me-2"></i>
+                                    <strong>Skills Found:</strong> {{ parsed_data.get('skills', []) | length }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if parsed_data.get('skills') %}
+                        <div class="mt-3">
+                            <strong><i class="bi bi-gear me-1"></i> Detected Skills:</strong>
+                            <div class="mt-2">
+                                {% for skill in parsed_data.get('skills', []) %}
+                                    <span class="badge skill-badge me-1 mb-1">{{ skill }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Action Buttons -->
+                <div class="d-flex justify-content-center gap-3 mt-4 animate-fade-in">
+                    <a href="{{ url_for('analyze', resume_id=resume_id) }}" class="btn btn-primary btn-lg hero-btn">
+                        <i class="bi bi-search me-2"></i> Continue to Analysis
+                    </a>
+                    <a href="{{ url_for('upload') }}" class="btn btn-outline-secondary btn-lg">
+                        <i class="bi bi-arrow-counterclockwise me-2"></i> Upload Different File
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

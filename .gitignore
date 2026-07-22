@@ -1,0 +1,35 @@
+# AI-Powered Resume Analyzer – .gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Database
+database/*.db
+
+# Uploaded files
+uploads/*
+!uploads/.gitkeep
+
+# Reports
+static/reports/*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Analysis History - Resume Pro{% endblock %}
+
+{% block content %}
+<section class="history-section py-5">
+    <div class="container">
+        <!-- Page Header -->
+        <div class="text-center mb-5 animate-fade-in">
+            <h1 class="page-title">
+                <i class="bi bi-clock-history me-2"></i>Analysis History
+            </h1>
+            <p class="page-subtitle">
+                View and download report for previously analyzed resumes.
+            </p>
+        </div>
+
+        <!-- History Content -->
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                {% if history %}
+                <div class="glass-card animate-slide-up">
+                    <div class="card-body-custom p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th scope="col" class="ps-4">Resume Filename</th>
+                                        <th scope="col">Upload Date</th>
+                                        <th scope="col" class="text-center">ATS Score</th>
+                                        <th scope="col" class="text-center">Job Match</th>
+                                        <th scope="col" class="text-end pe-4">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in history %}
+                                    <tr>
+                                        <td class="ps-4">
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-file-earmark-text text-primary fs-4 me-3"></i>
+                                                <div>
+                                                    <span class="fw-semibold text-dark">{{ item.filename }}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="text-muted small">
+                                                {{ item.analysis_date }}
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge {% if item.ats_score >= 70 %}bg-success-subtle text-success{% elif item.ats_score >= 50 %}bg-warning-subtle text-warning{% else %}bg-danger-subtle text-danger{% endif %} px-3 py-2 fs-6">
+                                                {{ item.ats_score | round | int }}/100
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            {% if item.match_percentage is not none and item.match_percentage > 0 %}
+                                                <span class="badge bg-primary-subtle text-primary px-3 py-2 fs-6">
+                                                    {{ item.match_percentage | round | int }}%
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted small">General Analysis</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end pe-4">
+                                            <div class="btn-group" role="group">
+                                                <a href="{{ url_for('dashboard', resume_id=item.resume_id) }}" class="btn btn-sm btn-outline-primary" title="View Dashboard">
+                                                    <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                                                </a>
+                                                <a href="{{ url_for('download_report', resume_id=item.resume_id) }}" class="btn btn-sm btn-outline-success" title="Download PDF Report">
+                                                    <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-5 glass-card animate-slide-up">
+                    <div class="my-4">
+                        <i class="bi bi-folder2-open text-muted" style="font-size: 4rem;"></i>
+                    </div>
+                    <h4>No Analysis History Found</h4>
+                    <p class="text-muted">You haven't uploaded or analyzed any resumes yet.</p>
+                    <a href="{{ url_for('upload') }}" class="btn btn-primary mt-3">
+                        <i class="bi bi-cloud-upload me-2"></i> Upload First Resume
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

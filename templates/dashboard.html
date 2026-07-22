@@ -1,0 +1,406 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Resume Pro{% endblock %}
+
+{% block content %}
+<section class="dashboard-section py-4">
+    <div class="container">
+        
+        <!-- Dashboard Header -->
+        <div class="dashboard-header mb-4 animate-fade-in">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="page-title mb-1">
+                        <i class="bi bi-speedometer2 me-2"></i>Analysis Dashboard
+                    </h1>
+                    <p class="page-subtitle mb-0">
+                        Complete resume analysis for <strong>{{ parsed_data.get('name', 'Candidate') }}</strong>
+                    </p>
+                </div>
+                <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                    <a href="{{ url_for('download_report', resume_id=resume_id) }}" 
+                       class="btn btn-primary hero-btn">
+                        <i class="bi bi-download me-2"></i> Download Report
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Row 1: ATS Score + Candidate Info -->
+        <div class="row g-4 mb-4">
+            <!-- ATS Score Card -->
+            <div class="col-lg-4">
+                <div class="glass-card h-100 animate-slide-up">
+                    <div class="card-header-custom">
+                        <i class="bi bi-speedometer2 me-2"></i><strong>ATS Score</strong>
+                    </div>
+                    <div class="card-body-custom text-center">
+                        <div class="ats-score-circle" data-score="{{ ats_result.total_score }}">
+                            <svg viewBox="0 0 120 120" class="score-svg">
+                                <circle cx="60" cy="60" r="52" class="score-bg-ring"/>
+                                <circle cx="60" cy="60" r="52" class="score-ring"
+                                        stroke-dasharray="326.73"
+                                        stroke-dashoffset="{{ 326.73 - (326.73 * ats_result.total_score / 100) }}"/>
+                            </svg>
+                            <div class="score-value">
+                                <span class="score-number" id="ats-score-number">{{ ats_result.total_score }}</span>
+                                <span class="score-total">/100</span>
+                            </div>
+                        </div>
+                        <div class="score-label mt-2">
+                            {% if ats_result.total_score >= 70 %}
+                                <span class="badge bg-success-subtle text-success fs-6">
+                                    <i class="bi bi-check-circle me-1"></i> Good
+                                </span>
+                            {% elif ats_result.total_score >= 50 %}
+                                <span class="badge bg-warning-subtle text-warning fs-6">
+                                    <i class="bi bi-exclamation-circle me-1"></i> Needs Improvement
+                                </span>
+                            {% else %}
+                                <span class="badge bg-danger-subtle text-danger fs-6">
+                                    <i class="bi bi-x-circle me-1"></i> Poor
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Candidate Info Card -->
+            <div class="col-lg-4">
+                <div class="glass-card h-100 animate-slide-up">
+                    <div class="card-header-custom">
+                        <i class="bi bi-person-badge me-2"></i><strong>Candidate Info</strong>
+                    </div>
+                    <div class="card-body-custom">
+                        <div class="candidate-info-list">
+                            <div class="info-row">
+                                <i class="bi bi-person text-primary"></i>
+                                <span>{{ parsed_data.get('name', 'Not Found') }}</span>
+                            </div>
+                            <div class="info-row">
+                                <i class="bi bi-envelope text-primary"></i>
+                                <span>{{ parsed_data.get('email', 'Not Found') or 'Not Found' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <i class="bi bi-phone text-primary"></i>
+                                <span>{{ parsed_data.get('phone', 'Not Found') or 'Not Found' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <i class="bi bi-linkedin text-primary"></i>
+                                <span>{{ 'Connected' if parsed_data.get('linkedin') else 'Not Found' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <i class="bi bi-github text-primary"></i>
+                                <span>{{ 'Connected' if parsed_data.get('github') else 'Not Found' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Stats Card -->
+            <div class="col-lg-4">
+                <div class="glass-card h-100 animate-slide-up">
+                    <div class="card-header-custom">
+                        <i class="bi bi-graph-up me-2"></i><strong>Quick Stats</strong>
+                    </div>
+                    <div class="card-body-custom">
+                        <div class="stat-row">
+                            <span class="stat-label-sm">Skills Found</span>
+                            <span class="stat-value-sm text-primary">{{ parsed_data.get('skills', []) | length }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label-sm">Education Entries</span>
+                            <span class="stat-value-sm text-primary">{{ parsed_data.get('education', []) | length }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label-sm">Experience Entries</span>
+                            <span class="stat-value-sm text-primary">{{ parsed_data.get('experience', []) | length }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label-sm">Projects</span>
+                            <span class="stat-value-sm text-primary">{{ parsed_data.get('projects', []) | length }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label-sm">Certifications</span>
+                            <span class="stat-value-sm text-primary">{{ parsed_data.get('certifications', []) | length }}</span>
+                        </div>
+                        {% if job_match %}
+                        <div class="stat-row">
+                            <span class="stat-label-sm">Job Match</span>
+                            <span class="stat-value-sm text-success">{{ job_match.match_percentage }}%</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Row 2: Score Breakdown -->
+        <div class="row g-4 mb-4">
+            <div class="col-12">
+                <div class="glass-card animate-slide-up">
+                    <div class="card-header-custom">
+                        <i class="bi bi-list-check me-2"></i><strong>ATS Score Breakdown</strong>
+                    </div>
+                    <div class="card-body-custom">
+                        <div class="row g-3">
+                            {% for key, data in ats_result.breakdown.items() %}
+                            <div class="col-md-6">
+                                <div class="breakdown-item">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span class="breakdown-label">{{ data.label }}</span>
+                                        <span class="breakdown-score">{{ data.score }}/{{ data.max }}</span>
+                                    </div>
+                                    <div class="progress breakdown-progress">
+                                        <div class="progress-bar {% if data.score / data.max >= 0.7 %}bg-success{% elif data.score / data.max >= 0.4 %}bg-warning{% else %}bg-danger{% endif %}"
+                                             style="width: {{ (data.score / data.max * 100) | round }}%"
+                                             role="progressbar">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Row 3: Skills Analysis -->
+        <div class="row g-4 mb-4">
+            <!-- Resume Skills -->
+            <div class="col-lg-{% if job_match %}6{% else %}12{% endif %}">
+                <div class="glass-card h-100 animate-slide-up">
+                    <div class="card-header-custom">
+                        <i class="bi bi-gear me-2"></i><strong>Your Skills</strong>
+                        <span class="badge bg-primary-subtle text-primary ms-2">{{ parsed_data.get('skills', []) | length }}</span>
+                    </div>
+                    <div class="card-body-custom">
+                        {% if parsed_data.get('skills') %}
+                            <div class="skills-cloud">
+                                {% for skill in parsed_data.get('skills', []) %}
+                                    <span class="badge skill-badge-green me-1 mb-2">
+                                        <i class="bi bi-check-lg me-1"></i>{{ skill }}
+                                    </span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted text-center py-3">
+                                <i class="bi bi-exclamation-circle me-1"></i>No skills detected
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            {% if job_match %}
+            <!-- Missing Skills -->
+            <div class="col-lg-6">
+                <div class="glass-card h-100 animate-slide-up">
+                    <div class="card-header-custom">
+                        <i class="bi bi-exclamation-triangle me-2"></i><strong>Missing Skills (from JD)</strong>
+                        <span class="badge bg-danger-subtle text-danger ms-2">{{ job_match.missing_skills | length }}</span>
+                    </div>
+                    <div class="card-body-custom">
+                        {% if job_match.missing_skills %}
+                            <div class="skills-cloud">
+                                {% for skill in job_match.missing_skills %}
+                                    <span class="badge skill-badge-red me-1 mb-2">
+                                        <i class="bi bi-x-lg me-1"></i>{{ skill }}
+                                    </span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-success text-center py-3">
+                                <i class="bi bi-check-circle me-1"></i>You have all the required skills!
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Row 4: Job Recommendations -->
+        {% if job_recommendations %}
+        <div class="row g-4 mb-4">
+            <div class="col-12">
+                <div class="glass-card animate-slide-up">
+                    <div class="card-header-custom">
+                        <i class="bi bi-briefcase me-2"></i><strong>Recommended Job Roles</strong>
+                    </div>
+                    <div class="card-body-custom">
+                        <div class="row g-3">
+                            {% for rec in job_recommendations %}
+                            <div class="col-md-6 col-lg-4">
+                                <div class="job-rec-card">
+                                    <div class="job-rec-header">
+                                        <span class="job-rec-icon">{{ rec.icon }}</span>
+                                        <h6 class="job-rec-title mb-0">{{ rec.role }}</h6>
+                                    </div>
+                                    <div class="job-rec-body">
+                                        <p class="job-rec-desc">{{ rec.description }}</p>
+                                        <div class="job-rec-fit">
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <small>Fit Score</small>
+                                                <small class="fw-bold">{{ rec.fit_percentage }}%</small>
+                                            </div>
+                                            <div class="progress" style="height: 6px;">
+                                                <div class="progress-bar {% if rec.fit_percentage >= 60 %}bg-success{% elif rec.fit_percentage >= 40 %}bg-warning{% else %}bg-info{% endif %}"
+                                                     style="width: {{ rec.fit_percentage }}%">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="mt-2">
+                                            <small class="text-muted">
+                                                <i class="bi bi-check-circle text-success me-1"></i>
+                                                {{ rec.matched_skills | length }} matched
+                                                &nbsp;|&nbsp;
+                                                <i class="bi bi-x-circle text-danger me-1"></i>
+                                                {{ rec.skills_to_learn | length }} to learn
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Row 5: Suggestions -->
+        <div class="row g-4 mb-4">
+            <div class="col-lg-{% if course_recommendations %}7{% else %}12{% endif %}">
+                <div class="glass-card h-100 animate-slide-up">
+                    <div class="card-header-custom">
+                        <i class="bi bi-lightbulb me-2"></i><strong>Improvement Suggestions</strong>
+                    </div>
+                    <div class="card-body-custom">
+                        {% for suggestion in suggestions %}
+                        <div class="suggestion-item priority-{{ suggestion.priority }}">
+                            <div class="suggestion-icon">
+                                {{ suggestion.icon }}
+                            </div>
+                            <div class="suggestion-content">
+                                <span class="suggestion-category">{{ suggestion.category }}</span>
+                                <p class="suggestion-text mb-0">{{ suggestion.message }}</p>
+                            </div>
+                            <span class="suggestion-priority badge 
+                                {% if suggestion.priority == 'critical' %}bg-danger
+                                {% elif suggestion.priority == 'important' %}bg-warning text-dark
+                                {% else %}bg-info{% endif %}">
+                                {{ suggestion.priority | title }}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Course Recommendations -->
+            {% if course_recommendations %}
+            <div class="col-lg-5">
+                <div class="glass-card h-100 animate-slide-up">
+                    <div class="card-header-custom">
+                        <i class="bi bi-book me-2"></i><strong>Recommended Learning</strong>
+                    </div>
+                    <div class="card-body-custom">
+                        {% for course in course_recommendations[:6] %}
+                        <div class="course-item">
+                            <h6 class="course-title">
+                                <i class="bi bi-mortarboard me-1 text-primary"></i>
+                                {{ course.topic }}
+                            </h6>
+                            <p class="course-desc">{{ course.description }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge 
+                                    {% if course.level == 'beginner' %}bg-success-subtle text-success
+                                    {% elif course.level == 'intermediate' %}bg-warning-subtle text-warning
+                                    {% else %}bg-danger-subtle text-danger{% endif %}">
+                                    {{ course.level | title }}
+                                </span>
+                                <small class="text-muted">{{ course.platforms }}</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Row 6: Education, Experience, Projects Preview -->
+        <div class="row g-4 mb-4">
+            {% if parsed_data.get('education') %}
+            <div class="col-md-4">
+                <div class="glass-card h-100 animate-slide-up">
+                    <div class="card-header-custom">
+                        <i class="bi bi-mortarboard me-2"></i><strong>Education</strong>
+                    </div>
+                    <div class="card-body-custom">
+                        {% for entry in parsed_data.get('education', [])[:5] %}
+                        <div class="resume-entry">
+                            <p class="mb-1">{{ entry }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if parsed_data.get('experience') %}
+            <div class="col-md-4">
+                <div class="glass-card h-100 animate-slide-up">
+                    <div class="card-header-custom">
+                        <i class="bi bi-briefcase me-2"></i><strong>Experience</strong>
+                    </div>
+                    <div class="card-body-custom">
+                        {% for entry in parsed_data.get('experience', [])[:5] %}
+                        <div class="resume-entry">
+                            <p class="mb-1">{{ entry }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if parsed_data.get('projects') %}
+            <div class="col-md-4">
+                <div class="glass-card h-100 animate-slide-up">
+                    <div class="card-header-custom">
+                        <i class="bi bi-code-slash me-2"></i><strong>Projects</strong>
+                    </div>
+                    <div class="card-body-custom">
+                        {% for entry in parsed_data.get('projects', [])[:5] %}
+                        <div class="resume-entry">
+                            <p class="mb-1">{{ entry }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Bottom Action Bar -->
+        <div class="text-center mb-4 animate-fade-in">
+            <a href="{{ url_for('download_report', resume_id=resume_id) }}" class="btn btn-primary btn-lg hero-btn me-2">
+                <i class="bi bi-file-earmark-pdf me-2"></i> Download PDF Report
+            </a>
+            <a href="{{ url_for('upload') }}" class="btn btn-outline-secondary btn-lg me-2">
+                <i class="bi bi-arrow-counterclockwise me-2"></i> Analyze Another Resume
+            </a>
+            <a href="{{ url_for('analyze', resume_id=resume_id) }}" class="btn btn-outline-primary btn-lg">
+                <i class="bi bi-search me-2"></i> Compare with Job Description
+            </a>
+        </div>
+        
+    </div>
+</section>
+{% endblock %}

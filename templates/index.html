@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Resume Pro - AI-Powered Resume Analyzer{% endblock %}
+
+{% block content %}
+<!-- ═══════════════════════════════════════════ -->
+<!-- Hero Section                                -->
+<!-- ═══════════════════════════════════════════ -->
+<section class="hero-section">
+    <div class="hero-bg-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+    </div>
+    <div class="container">
+        <div class="row align-items-center min-vh-75">
+            <div class="col-lg-6 hero-content animate-slide-up">
+                <div class="hero-badge mb-3">
+                    <i class="bi bi-stars me-1"></i> AI-Powered Analysis
+                </div>
+                <h1 class="hero-title">
+                    Analyze Your Resume<br>
+                    <span class="hero-gradient-text">Like a Pro Recruiter</span>
+                </h1>
+                <p class="hero-subtitle">
+                    Upload your resume and get instant ATS scoring, skill gap analysis, 
+                    job recommendations, and actionable improvement suggestions — 
+                    all powered by machine learning.
+                </p>
+                <div class="hero-cta">
+                    <a href="{{ url_for('upload') }}" class="btn btn-primary btn-lg hero-btn me-3">
+                        <i class="bi bi-cloud-upload me-2"></i> Upload Resume
+                    </a>
+                    <a href="#features" class="btn btn-outline-light btn-lg hero-btn-outline">
+                        <i class="bi bi-arrow-down me-2"></i> Learn More
+                    </a>
+                </div>
+                <div class="hero-stats mt-4">
+                    <div class="stat-item">
+                        <span class="stat-number">100+</span>
+                        <span class="stat-label">Skills Tracked</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">12</span>
+                        <span class="stat-label">Job Roles</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">8</span>
+                        <span class="stat-label">ATS Criteria</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 hero-visual animate-slide-up-delay">
+                <div class="hero-card-stack">
+                    <div class="floating-card card-1">
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                        <span>ATS Score: <strong>87/100</strong></span>
+                    </div>
+                    <div class="floating-card card-2">
+                        <i class="bi bi-graph-up-arrow text-primary"></i>
+                        <span>Skills Match: <strong>92%</strong></span>
+                    </div>
+                    <div class="floating-card card-3">
+                        <i class="bi bi-briefcase-fill text-warning"></i>
+                        <span>Top Role: <strong>ML Engineer</strong></span>
+                    </div>
+                    <div class="hero-resume-preview">
+                        <div class="resume-line resume-title-line"></div>
+                        <div class="resume-line resume-subtitle-line"></div>
+                        <div class="resume-line-group">
+                            <div class="resume-line short"></div>
+                            <div class="resume-line medium"></div>
+                            <div class="resume-line long"></div>
+                        </div>
+                        <div class="resume-section-gap"></div>
+                        <div class="resume-line-group">
+                            <div class="resume-line medium"></div>
+                            <div class="resume-line long"></div>
+                            <div class="resume-line short"></div>
+                        </div>
+                        <div class="resume-badge-row">
+                            <span class="resume-badge">Python</span>
+                            <span class="resume-badge">ML</span>
+                            <span class="resume-badge">SQL</span>
+                            <span class="resume-badge">Flask</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- Features Section                            -->
+<!-- ═══════════════════════════════════════════ -->
+<section class="features-section py-5" id="features">
+    <div class="container">
+        <div class="text-center mb-5 animate-fade-in">
+            <h2 class="section-title">Powerful Features</h2>
+            <p class="section-subtitle">Everything you need to optimize your resume and land your dream job</p>
+        </div>
+        
+        <div class="row g-4">
+            <!-- Feature 1: Upload & Extract -->
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-card animate-fade-in">
+                    <div class="feature-icon-wrapper">
+                        <i class="bi bi-file-earmark-arrow-up feature-icon"></i>
+                    </div>
+                    <h5 class="feature-title">Smart Upload</h5>
+                    <p class="feature-desc">Upload PDF or DOCX resumes. Our AI extracts and parses all text automatically.</p>
+                </div>
+            </div>
+            
+            <!-- Feature 2: ATS Score -->
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-card animate-fade-in">
+                    <div class="feature-icon-wrapper icon-green">
+                        <i class="bi bi-speedometer2 feature-icon"></i>
+                    </div>
+                    <h5 class="feature-title">ATS Scoring</h5>
+                    <p class="feature-desc">Get a detailed ATS compatibility score out of 100 with category-wise breakdown.</p>
+                </div>
+            </div>
+            
+            <!-- Feature 3: Skill Analysis -->
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-card animate-fade-in">
+                    <div class="feature-icon-wrapper icon-purple">
+                        <i class="bi bi-bar-chart-line feature-icon"></i>
+                    </div>
+                    <h5 class="feature-title">Skill Analysis</h5>
+                    <p class="feature-desc">Compare your skills against job descriptions using TF-IDF and Cosine Similarity.</p>
+                </div>
+            </div>
+            
+            <!-- Feature 4: Recommendations -->
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-card animate-fade-in">
+                    <div class="feature-icon-wrapper icon-orange">
+                        <i class="bi bi-lightbulb feature-icon"></i>
+                    </div>
+                    <h5 class="feature-title">Smart Suggestions</h5>
+                    <p class="feature-desc">Get personalized job role recommendations and improvement tips.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- How It Works Section                        -->
+<!-- ═══════════════════════════════════════════ -->
+<section class="how-it-works-section py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="section-title">How It Works</h2>
+            <p class="section-subtitle">Three simple steps to a better resume</p>
+        </div>
+        
+        <div class="row g-4 align-items-center">
+            <div class="col-md-4">
+                <div class="step-card text-center">
+                    <div class="step-number">1</div>
+                    <h5 class="step-title">Upload</h5>
+                    <p class="step-desc">Upload your resume in PDF or DOCX format</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="step-card text-center">
+                    <div class="step-number">2</div>
+                    <h5 class="step-title">Analyze</h5>
+                    <p class="step-desc">Our AI parses, scores, and compares your resume</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="step-card text-center">
+                    <div class="step-number">3</div>
+                    <h5 class="step-title">Improve</h5>
+                    <p class="step-desc">Get actionable suggestions and download your report</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-5">
+            <a href="{{ url_for('upload') }}" class="btn btn-primary btn-lg hero-btn">
+                <i class="bi bi-rocket-takeoff me-2"></i> Get Started Now
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}

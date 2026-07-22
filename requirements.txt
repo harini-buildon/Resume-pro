@@ -1,0 +1,29 @@
+# ============================================
+# AI-Powered Resume Analyzer – Dependencies
+# ============================================
+# Install all dependencies with:
+#   pip install -r requirements.txt
+#
+# Each package and its purpose:
+# ─────────────────────────────────────────────
+
+# Web Framework
+Flask>=3.1.1
+
+# PDF text extraction – reads text from PDF files page by page
+pdfplumber>=0.11.6
+
+# DOCX support – reads text from Microsoft Word documents
+python-docx>=1.1.2
+
+# Data manipulation – used for structuring extracted data
+pandas>=2.2.3
+
+# Machine Learning – TF-IDF Vectorizer and Cosine Similarity
+scikit-learn>=1.6.1
+
+# PDF report generation – creates downloadable PDF reports
+fpdf2>=2.8.3
+
+# Secure filenames for uploaded files
+Werkzeug>=3.1.3
