@@ -18,29 +18,39 @@ BUGS FIXED vs previous version:
 """
 
 import re
-import spacy
+try:
+    import spacy
+except ImportError:
+    spacy = None
+
 from utils.skills_db import SKILLS_DATABASE, get_all_skills
 
 # ─── Global spaCy model cache ────────────────────────────────────────────────
-_NLP_MODEL = None
+_NLP_MODEL = False  # False = uninitialized; None = failed to load
 
 
 def get_spacy_nlp():
     """
-    Load and cache spaCy 'en_core_web_sm' at application startup.
-    Never reloads on subsequent calls – O(1) after first load.
+    Load and cache spaCy 'en_core_web_sm' if available.
+    Returns None if spaCy is not installed or model cannot be loaded.
     """
     global _NLP_MODEL
-    if _NLP_MODEL is None:
+    if _NLP_MODEL is False:
+        if spacy is None:
+            _NLP_MODEL = None
+            return None
         try:
             _NLP_MODEL = spacy.load("en_core_web_sm")
-        except OSError:
-            import subprocess, sys
-            subprocess.run(
-                [sys.executable, "-m", "spacy", "download", "en_core_web_sm"],
-                check=True
-            )
-            _NLP_MODEL = spacy.load("en_core_web_sm")
+        except Exception:
+            try:
+                import subprocess, sys
+                subprocess.run(
+                    [sys.executable, "-m", "spacy", "download", "en_core_web_sm"],
+                    check=True
+                )
+                _NLP_MODEL = spacy.load("en_core_web_sm")
+            except Exception:
+                _NLP_MODEL = None
     return _NLP_MODEL
 
 
@@ -340,50 +350,48 @@ def extract_keywords_nlp(text):
         if re.search(pattern, text_lower):
             extracted.add(canonical)
 
-    # ── Step 3 & 4: spaCy NLP on pre-split SEGMENTS (not full text) ─────────
-    # Running NER on segments eliminates comma-list entities like
-    # 'Redis, Microservices, Agile' being treated as one ORG entity.
-    segments = _preprocess_text(text)
-    for segment in segments:
-        seg_doc = nlp(segment)
+    # ── Step 3 & 4: spaCy NLP on pre-split SEGMENTS (if available) ───────────
+    if nlp is not None:
+        segments = _preprocess_text(text)
+        for segment in segments:
+            seg_doc = nlp(segment)
 
-        # Named entities
-        for ent in seg_doc.ents:
-            if ent.label_ in {"ORG", "PRODUCT", "WORK_OF_ART"}:
-                clean_ent = ent.text.strip()
-                ent_lower = clean_ent.lower()
-                if (len(clean_ent) > 1
-                        and not ent.root.is_stop
-                        and not ent.root.is_punct
-                        and not _is_noise(ent_lower)):
-                    extracted.add(normalize_keyword(clean_ent))
+            # Named entities
+            for ent in seg_doc.ents:
+                if ent.label_ in {"ORG", "PRODUCT", "WORK_OF_ART"}:
+                    clean_ent = ent.text.strip()
+                    ent_lower = clean_ent.lower()
+                    if (len(clean_ent) > 1
+                            and not ent.root.is_stop
+                            and not ent.root.is_punct
+                            and not _is_noise(ent_lower)):
+                        extracted.add(normalize_keyword(clean_ent))
 
-        # Noun chunks — use token.TEXT (not lemma) for proper nouns
-        # so 'Kubernetes' stays 'Kubernetes', not 'Kubernete'
-        for chunk in seg_doc.noun_chunks:
-            chunk_words = [
-                token.text.lower()         # ← text, not lemma_
-                for token in chunk
-                if not token.is_stop and not token.is_punct and token.is_alpha
-            ]
-            if 1 <= len(chunk_words) <= 3:
-                chunk_str = " ".join(chunk_words)
-                if (len(chunk_str) > 2
-                        and not _is_noise(chunk_str)):
-                    normalized = normalize_keyword(chunk_str)
-                    # Only keep if it resolves to a known synonym or skills DB entry
-                    # (this prevents arbitrary noun phrases from polluting the result)
-                    norm_lower = normalized.lower()
-                    is_known = (
-                        norm_lower in SYNONYM_MAP
-                        or any(
-                            skill.lower() == norm_lower
-                            for skills in SKILLS_DATABASE.values()
-                            for skill in skills
+            # Noun chunks — use token.TEXT (not lemma) for proper nouns
+            # so 'Kubernetes' stays 'Kubernetes', not 'Kubernete'
+            for chunk in seg_doc.noun_chunks:
+                chunk_words = [
+                    token.text.lower()         # ← text, not lemma_
+                    for token in chunk
+                    if not token.is_stop and not token.is_punct and token.is_alpha
+                ]
+                if 1 <= len(chunk_words) <= 3:
+                    chunk_str = " ".join(chunk_words)
+                    if (len(chunk_str) > 2
+                            and not _is_noise(chunk_str)):
+                        normalized = normalize_keyword(chunk_str)
+                        # Only keep if it resolves to a known synonym or skills DB entry
+                        norm_lower = normalized.lower()
+                        is_known = (
+                            norm_lower in SYNONYM_MAP
+                            or any(
+                                skill.lower() == norm_lower
+                                for skills in SKILLS_DATABASE.values()
+                                for skill in skills
+                            )
                         )
-                    )
-                    if is_known:
-                        extracted.add(normalized)
+                        if is_known:
+                            extracted.add(normalized)
 
     # ── Step 6: Post-dedup — remove subset forms ─────────────────────────────
     extracted = _remove_subset_duplicates(extracted)

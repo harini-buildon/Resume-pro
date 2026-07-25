@@ -50,11 +50,14 @@ app.secret_key = SECRET_KEY
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 
-# Initialize SQLite DB and Cache spaCy model at app startup
+# Initialize SQLite DB and Cache spaCy model at app startup (if installed)
 init_db()
 try:
-    get_spacy_nlp()
-    print("spaCy model (en_core_web_sm) loaded successfully at app startup.")
+    nlp_model = get_spacy_nlp()
+    if nlp_model is not None:
+        print("spaCy model (en_core_web_sm) loaded successfully at app startup.")
+    else:
+        print("spaCy model not installed/available; using pure Python NLP processor.")
 except Exception as e:
     print(f"Warning: Could not pre-load spaCy model at startup: {e}")
 

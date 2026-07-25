@@ -30,14 +30,40 @@ WHY USE BOTH METHODS?
 - Together, they provide a comprehensive comparison
 """
 
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+import math
+import re
+from collections import Counter
 from utils.skills_db import match_skills
 from utils.nlp_processor import extract_keywords_nlp, calculate_weighted_match
 
+ENGLISH_STOP_WORDS = {
+    'a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'are', "aren't", 'as', 'at',
+    'be', 'because', 'been', 'before', 'being', 'below', 'between', 'both', 'but', 'by', 'can', 'cannot', 'could',
+    'did', 'do', 'does', 'doing', 'down', 'during', 'each', 'few', 'for', 'from', 'further', 'had', 'has', 'have',
+    'having', 'he', 'her', 'here', 'hers', 'herself', 'him', 'himself', 'his', 'how', 'i', 'if', 'in', 'into', 'is',
+    'it', 'its', 'itself', 'just', 'me', 'more', 'most', 'my', 'myself', 'no', 'nor', 'not', 'now', 'of', 'off',
+    'on', 'once', 'only', 'or', 'other', 'our', 'ours', 'ourselves', 'out', 'over', 'own', 'same', 'she', 'should',
+    'so', 'some', 'such', 'than', 'that', 'the', 'their', 'theirs', 'them', 'themselves', 'then', 'there', 'these',
+    'they', 'this', 'those', 'through', 'to', 'too', 'under', 'until', 'up', 'very', 'was', 'we', 'were', 'what',
+    'when', 'where', 'which', 'while', 'who', 'whom', 'why', 'with', 'would', 'you', 'your', 'yours', 'yourself',
+    'yourselves'
+}
+
+
+def _tokenize_text(text):
+    """Tokenize text into unigrams and bigrams, ignoring stop words."""
+    words = [w.lower() for w in re.findall(r'\b[a-zA-Z0-9_\-\./+#]+\b', text)]
+    unigrams = [w for w in words if w not in ENGLISH_STOP_WORDS and len(w) > 1]
+    bigrams = [
+        f"{words[i]} {words[i+1]}"
+        for i in range(len(words) - 1)
+        if words[i] not in ENGLISH_STOP_WORDS and words[i+1] not in ENGLISH_STOP_WORDS
+    ]
+    return unigrams + bigrams
+
 
 def extract_job_skills(job_text):
-    """Extract keywords and recognized skills from a job description using spaCy NLP."""
+    """Extract keywords and recognized skills from a job description using NLP."""
     return extract_keywords_nlp(job_text)
 
 
@@ -49,30 +75,51 @@ def compare_skills(resume_skills, job_skills):
 def calculate_tfidf_similarity(resume_text, job_text):
     """
     Calculate the similarity between resume and job description
-    using TF-IDF Vectorization + Cosine Similarity.
+    using pure Python TF-IDF Vectorization + Cosine Similarity.
 
-    Uses unigrams AND bigrams (ngram_range=(1, 2)) so that multi-word
-    skills like "Machine Learning", "System Design", "CI/CD" are scored
-    as coherent phrases rather than disconnected single tokens.
+    Uses unigrams AND bigrams so that multi-word skills like
+    "Machine Learning", "System Design", "CI/CD" are scored properly.
 
-    sublinear_tf=True applies log-normalization to term frequency,
-    dampening the effect of very frequent words and giving rarer
-    technical terms a fairer weight.
+    Sublinear TF scaling: 1 + log(tf) dampens high-frequency terms.
+    Smooth IDF formula: log((1 + n) / (1 + df)) + 1 matches scikit-learn.
     """
     if not resume_text or not job_text:
         return 0.0
 
     try:
-        vectorizer = TfidfVectorizer(
-            stop_words='english',
-            ngram_range=(1, 2),   # unigrams + bigrams
-            min_df=1,
-            sublinear_tf=True,    # log(1 + tf) – dampens high-frequency terms
-        )
-        tfidf_matrix = vectorizer.fit_transform([resume_text, job_text])
-        similarity = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])
-        score = round(float(similarity[0][0]) * 100, 1)
-        return score
+        tokens1 = _tokenize_text(resume_text)
+        tokens2 = _tokenize_text(job_text)
+
+        if not tokens1 or not tokens2:
+            return 0.0
+
+        tf1 = Counter(tokens1)
+        tf2 = Counter(tokens2)
+
+        vocab = set(tf1.keys()).union(set(tf2.keys()))
+        num_docs = 2.0
+
+        vec1 = {}
+        vec2 = {}
+
+        for term in vocab:
+            df = (1.0 if term in tf1 else 0.0) + (1.0 if term in tf2 else 0.0)
+            idf = math.log((1.0 + num_docs) / (1.0 + df)) + 1.0
+
+            if term in tf1:
+                vec1[term] = (1.0 + math.log(tf1[term])) * idf
+            if term in tf2:
+                vec2[term] = (1.0 + math.log(tf2[term])) * idf
+
+        dot_product = sum(vec1.get(t, 0.0) * vec2.get(t, 0.0) for t in vocab)
+        norm1 = math.sqrt(sum(v ** 2 for v in vec1.values()))
+        norm2 = math.sqrt(sum(v ** 2 for v in vec2.values()))
+
+        if norm1 == 0.0 or norm2 == 0.0:
+            return 0.0
+
+        similarity = dot_product / (norm1 * norm2)
+        return round(float(similarity) * 100, 1)
     except Exception as e:
         print(f"TF-IDF calculation error: {e}")
         return 0.0
