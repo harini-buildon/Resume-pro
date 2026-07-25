@@ -15,31 +15,36 @@ Key concepts:
 import os
 
 # ──────────────────────────────────────────────
-# Base directory – resolves to the project root
-# os.path.abspath(__file__) gives the full path of this config file,
-# and os.path.dirname() strips the filename to get the directory.
+# Base directory & Environment detection
 # ──────────────────────────────────────────────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+IS_VERCEL = bool(os.environ.get('VERCEL')) or 'VERCEL' in os.environ
 
 # ──────────────────────────────────────────────
 # Flask Settings
 # ──────────────────────────────────────────────
-SECRET_KEY = 'resume-analyzer-secret-key-change-in-production'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'resume-analyzer-secret-key-change-in-production')
 
 # ──────────────────────────────────────────────
-# File Upload Settings
+# File Upload & Database Settings (Writable /tmp on Vercel)
 # ──────────────────────────────────────────────
-UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
+if IS_VERCEL:
+    UPLOAD_FOLDER = '/tmp/uploads'
+    DATABASE_PATH = '/tmp/database/resume_analyzer.db'
+    REPORT_FOLDER = '/tmp/reports'
+else:
+    UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
+    DATABASE_PATH = os.path.join(BASE_DIR, 'database', 'resume_analyzer.db')
+    REPORT_FOLDER = os.path.join(BASE_DIR, 'static', 'reports')
+
 ALLOWED_EXTENSIONS = {'pdf', 'docx'}
 MIN_CONTENT_LENGTH = 50 * 1024         # 50 KB minimum upload size
 MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB maximum upload size
 
-# ──────────────────────────────────────────────
-# Database Settings
-# ──────────────────────────────────────────────
-DATABASE_PATH = os.path.join(BASE_DIR, 'database', 'resume_analyzer.db')
-
-# ──────────────────────────────────────────────
-# Report Settings
-# ──────────────────────────────────────────────
-REPORT_FOLDER = os.path.join(BASE_DIR, 'static', 'reports')
+# Ensure target directories exist safely
+try:
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
+    os.makedirs(REPORT_FOLDER, exist_ok=True)
+except Exception as e:
+    print(f"Directory initialization notice: {e}")
