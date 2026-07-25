@@ -24,3 +24,7 @@ python-dotenv>=1.0.1
 # Security Enhancements
 Flask-WTF>=1.2.1
 Flask-Limiter>=3.8.0
+
+# AI Models
+google-genai>=0.3.0
+

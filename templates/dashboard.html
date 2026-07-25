@@ -141,10 +141,23 @@
             </div>
         </div>
         
-        <!-- Row 2: Score Breakdown -->
+        <!-- Row 2: Visualizations & Score Breakdown -->
         <div class="row g-4 mb-4">
-            <div class="col-12">
-                <div class="glass-card animate-slide-up">
+            <!-- Doughnut Chart -->
+            <div class="col-lg-5">
+                <div class="glass-card h-100 animate-slide-up">
+                    <div class="card-header-custom">
+                        <i class="bi bi-pie-chart me-2"></i><strong>Skills Analysis</strong>
+                    </div>
+                    <div class="card-body-custom d-flex justify-content-center align-items-center" style="min-height: 250px;">
+                        <canvas id="skillsRadarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Score Breakdown -->
+            <div class="col-lg-7">
+                <div class="glass-card h-100 animate-slide-up">
                     <div class="card-header-custom">
                         <i class="bi bi-list-check me-2"></i><strong>ATS Score Breakdown</strong>
                     </div>
@@ -661,4 +674,67 @@
         
     </div>
 </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const ctx = document.getElementById('skillsRadarChart');
+        if (!ctx) return;
+        
+        {% if job_match %}
+        const matchedSkillsCount = {{ job_match.matched_skills | length }};
+        const missingSkillsCount = {{ job_match.missing_skills | length }};
+        const chartLabels = ['Matched JD Skills', 'Missing JD Skills'];
+        {% else %}
+        const matchedSkillsCount = {{ (parsed_data.get('skills', []) | length) if parsed_data.get('skills') else 0 }};
+        const missingSkillsCount = 0;
+        const chartLabels = ['Total Resume Skills', ''];
+        {% endif %}
+        
+        // If there are no skills matched and no job match, default to a gray ring
+        if (matchedSkillsCount === 0 && missingSkillsCount === 0) {
+            new Chart(ctx.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['No Data'],
+                    datasets: [{ data: [1], backgroundColor: ['#94a3b8'], borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+            return;
+        }
+
+        new Chart(ctx.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: chartLabels,
+                datasets: [{
+                    data: [matchedSkillsCount, missingSkillsCount],
+                    backgroundColor: [
+                        'rgba(5, 150, 105, 0.8)', // Success green
+                        'rgba(220, 38, 38, 0.8)'  // Danger red
+                    ],
+                    borderColor: [
+                        'rgba(5, 150, 105, 1)',
+                        'rgba(220, 38, 38, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: document.documentElement.getAttribute('data-bs-theme') === 'dark' ? '#f8fafc' : '#1f2937'
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}

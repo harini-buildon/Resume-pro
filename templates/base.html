@@ -16,12 +16,23 @@
     <!-- Google Fonts: Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <!-- Custom CSS -->
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
     
     {% block head %}{% endblock %}
 </head>
 <body>
+    <!-- Global Full-Screen Loader Overlay -->
+    <div id="global-loader" class="loader-overlay d-none">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <h5 class="mt-3 text-white fw-semibold">Analyzing profile with Gemini AI...</h5>
+    </div>
+
     <!-- ═══════════════════════════════════════════ -->
     <!-- Navigation Bar                              -->
     <!-- ═══════════════════════════════════════════ -->
@@ -81,6 +92,13 @@
                         </a>
                     </li>
                     {% endif %}
+                    
+                    <!-- Dark Mode Toggle -->
+                    <li class="nav-item ms-lg-3 mt-1">
+                        <button id="darkModeToggle" class="btn btn-outline-light btn-sm" aria-label="Toggle Dark Mode">
+                            <i class="bi bi-moon-stars"></i>
+                        </button>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -146,6 +164,41 @@
     
     <!-- Custom JavaScript -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    <script>
+        // Dark Mode Logic
+        const toggleBtn = document.getElementById('darkModeToggle');
+        const icon = toggleBtn.querySelector('i');
+        const html = document.documentElement;
+        
+        if (localStorage.getItem('theme') === 'dark') {
+            html.setAttribute('data-bs-theme', 'dark');
+            icon.classList.replace('bi-moon-stars', 'bi-sun');
+        }
+
+        toggleBtn.addEventListener('click', () => {
+            if (html.getAttribute('data-bs-theme') === 'dark') {
+                html.setAttribute('data-bs-theme', 'light');
+                localStorage.setItem('theme', 'light');
+                icon.classList.replace('bi-sun', 'bi-moon-stars');
+            } else {
+                html.setAttribute('data-bs-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+                icon.classList.replace('bi-moon-stars', 'bi-sun');
+            }
+        });
+
+        // Global Loader Logic for Forms
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function() {
+                const loader = document.getElementById('global-loader');
+                if (loader) {
+                    loader.classList.remove('d-none');
+                    loader.classList.add('d-flex', 'flex-column', 'align-items-center', 'justify-content-center');
+                }
+            });
+        });
+    </script>
     
     {% block scripts %}{% endblock %}
 </body>

@@ -1160,3 +1160,62 @@ main {
         transform: translateY(0);
     }
 }
+
+/* ==========================================================================
+   Dark Mode Theme Override
+   ========================================================================== */
+[data-bs-theme="dark"] {
+    --primary-color: #3b82f6;
+    --primary-hover: #60a5fa;
+    --primary-light: #1e3a8a;
+    --accent-color: #60a5fa;
+    --text-dark: #f8fafc;
+    --text-muted: #cbd5e1;
+    --bg-light: #0f172a;
+    --border-color: #334155;
+    --glass-bg: rgba(30, 41, 59, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+[data-bs-theme="dark"] body {
+    background-color: #020617;
+    color: var(--text-dark);
+}
+
+[data-bs-theme="dark"] .glass-card {
+    background: var(--glass-bg);
+    border-color: var(--glass-border);
+}
+
+[data-bs-theme="dark"] .hero-section {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+}
+
+[data-bs-theme="dark"] .navbar {
+    background: linear-gradient(90deg, #020617, #0f172a) !important;
+}
+
+[data-bs-theme="dark"] .form-control, [data-bs-theme="dark"] .form-select {
+    background-color: #1e293b;
+    border-color: #334155;
+    color: #f8fafc;
+}
+
+[data-bs-theme="dark"] .form-control:focus, [data-bs-theme="dark"] .form-select:focus {
+    background-color: #0f172a;
+    color: #f8fafc;
+}
+
+/* ==========================================================================
+   Global Loader Overlay
+   ========================================================================== */
+.loader-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(2, 6, 23, 0.85);
+    z-index: 9999;
+    backdrop-filter: blur(8px);
+}

@@ -307,9 +307,9 @@ def score_keyword_match(parsed_data, job_match=None):
 def calculate_ats_score(parsed_data, raw_text, job_match=None):
     """
     Calculate ATS compatibility score.
-    If job_match is provided, computes:
-      Final Score = round((weighted_keyword_match_% * 0.7) + (similarity_score * 0.3))
-    Otherwise falls back to general section-based scoring.
+    Returns the sum of all section scores (max 100 points).
+    If job_match is provided, it incorporates the keyword match percentage 
+    into the 10-point keyword score section and includes extra breakdown data.
     """
     contact_score, contact_details = score_contact_info(parsed_data)
     skills_score, skills_details = score_skills(parsed_data)
@@ -324,47 +324,26 @@ def calculate_ats_score(parsed_data, raw_text, job_match=None):
                      experience_score + projects_score + certs_score + 
                      format_score + keyword_score)
 
+    breakdown = {
+        'contact_info': {'score': contact_score, 'max': 15, 'label': 'Contact Information', 'details': contact_details},
+        'skills': {'score': skills_score, 'max': 20, 'label': 'Technical Skills', 'details': skills_details},
+        'education': {'score': education_score, 'max': 15, 'label': 'Education', 'details': education_details},
+        'experience': {'score': experience_score, 'max': 15, 'label': 'Work Experience', 'details': experience_details},
+        'projects': {'score': projects_score, 'max': 10, 'label': 'Projects', 'details': projects_details},
+        'certifications': {'score': certs_score, 'max': 5, 'label': 'Certifications', 'details': certs_details},
+        'formatting': {'score': format_score, 'max': 10, 'label': 'Resume Formatting', 'details': format_details},
+        'keyword_match': {'score': keyword_score, 'max': 10, 'label': 'Keyword Match', 'details': keyword_details}
+    }
+
     if job_match:
         kw_match_pct = float(job_match.get('match_percentage', 0.0))
         sim_score = float(job_match.get('similarity_score', 0.0))
         
-        raw_final = (kw_match_pct * 0.7) + (sim_score * 0.3)
-        final_ats_score = int(round(raw_final))
-        
-        formula_str = f"({kw_match_pct:.1f}% * 0.7) + ({sim_score:.1f}% * 0.3) = {final_ats_score}"
-        
-        breakdown = {
-            'weighted_keyword_match_percent': kw_match_pct,
-            'similarity_score': sim_score,
-            'keyword_weight': 0.7,
-            'similarity_weight': 0.3,
-            'formula': formula_str,
-            'contact_info': {'score': contact_score, 'max': 15, 'label': 'Contact Information', 'details': contact_details},
-            'skills': {'score': skills_score, 'max': 20, 'label': 'Technical Skills', 'details': skills_details},
-            'education': {'score': education_score, 'max': 15, 'label': 'Education', 'details': education_details},
-            'experience': {'score': experience_score, 'max': 15, 'label': 'Work Experience', 'details': experience_details},
-            'projects': {'score': projects_score, 'max': 10, 'label': 'Projects', 'details': projects_details},
-            'certifications': {'score': certs_score, 'max': 5, 'label': 'Certifications', 'details': certs_details},
-            'formatting': {'score': format_score, 'max': 10, 'label': 'Resume Formatting', 'details': format_details},
-            'keyword_match': {'score': keyword_score, 'max': 10, 'label': 'Keyword Match', 'details': keyword_details}
-        }
-        
-        return {
-            'total_score': final_ats_score,
-            'breakdown': breakdown
-        }
-    else:
-        return {
-            'total_score': section_total,
-            'breakdown': {
-                'contact_info': {'score': contact_score, 'max': 15, 'label': 'Contact Information', 'details': contact_details},
-                'skills': {'score': skills_score, 'max': 20, 'label': 'Technical Skills', 'details': skills_details},
-                'education': {'score': education_score, 'max': 15, 'label': 'Education', 'details': education_details},
-                'experience': {'score': experience_score, 'max': 15, 'label': 'Work Experience', 'details': experience_details},
-                'projects': {'score': projects_score, 'max': 10, 'label': 'Projects', 'details': projects_details},
-                'certifications': {'score': certs_score, 'max': 5, 'label': 'Certifications', 'details': certs_details},
-                'formatting': {'score': format_score, 'max': 10, 'label': 'Resume Formatting', 'details': format_details},
-                'keyword_match': {'score': keyword_score, 'max': 10, 'label': 'Keyword Match', 'details': keyword_details}
-            }
-        }
+        breakdown['weighted_keyword_match_percent'] = kw_match_pct
+        breakdown['similarity_score'] = sim_score
+
+    return {
+        'total_score': section_total,
+        'breakdown': breakdown
+    }
 
