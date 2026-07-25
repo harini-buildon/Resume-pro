@@ -1,56 +1,104 @@
 """
-database/db.py – SQLite Database Setup & Helper Functions
-==========================================================
+database/db.py – Database Setup & Multi-Engine Helper Functions (SQLite & PostgreSQL)
+====================================================================================
 This module handles all database operations for the Resume Analyzer.
-
-KEY CONCEPTS FOR BEGINNERS:
-──────────────────────────
-1. SQLite: A lightweight database stored as a single file (no server needed).
-2. Connection: We open a connection to talk to the database, like opening a file.
-3. Cursor: Think of it as a pointer that executes SQL commands.
-4. Commit: Saves changes permanently (like Ctrl+S for the database).
-5. JSON storage: We store complex data (lists, dicts) as JSON strings in TEXT columns.
-
-TABLES:
-──────
-- resumes: Stores uploaded resume files and their extracted text/parsed data.
-- analyses: Stores the analysis results (ATS score, skills, suggestions, etc.).
+It seamlessly supports SQLite (local offline development) and PostgreSQL / Supabase / Neon
+(persistent serverless database for production on Vercel) when DATABASE_URL is set.
 """
 
 import sqlite3
 import json
 import os
-from config import DATABASE_PATH
+from config import DATABASE_PATH, DATABASE_URL
+
+
+def is_postgres():
+    """Check if PostgreSQL environment variable DATABASE_URL is active."""
+    return bool(DATABASE_URL and DATABASE_URL.startswith(('postgres://', 'postgresql://')))
 
 
 def get_db_connection():
     """
-    Create and return a database connection.
-    
-    sqlite3.Row allows us to access columns by name (like a dictionary)
-    instead of by index number. For example:
-        row['filename'] instead of row[1]
+    Create and return a database connection (PostgreSQL if DATABASE_URL is set, else SQLite).
     """
-    # Ensure the database directory exists
+    if is_postgres():
+        url = DATABASE_URL
+        if url.startswith('postgres://'):
+            url = url.replace('postgres://', 'postgresql://', 1)
+        try:
+            import psycopg2
+            import psycopg2.extras
+            conn = psycopg2.connect(url, cursor_factory=psycopg2.extras.RealDictCursor)
+            return conn
+        except Exception as e:
+            print(f"PostgreSQL connection error: {e}. Falling back to SQLite.")
+
+    # Default to SQLite for local development
     os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
-    
     conn = sqlite3.connect(DATABASE_PATH)
     conn.row_factory = sqlite3.Row  # Return rows as dict-like objects
     return conn
 
 
+def execute_db(query, params=(), fetchone=False, fetchall=False, return_id=False):
+    """
+    Unified database query executor supporting both SQLite and PostgreSQL.
+    Handles parameter placeholder translation (? -> %s) and returning inserted IDs.
+    """
+    conn = get_db_connection()
+    use_pg = is_postgres() and not isinstance(conn, sqlite3.Connection)
+
+    # Translate parameter placeholders if using PostgreSQL (%s instead of ?)
+    if use_pg:
+        query_exec = query.replace('?', '%s')
+        if return_id and 'RETURNING' not in query_exec.upper():
+            query_exec = query_exec.rstrip('; ') + ' RETURNING id'
+    else:
+        query_exec = query
+
+    cursor = conn.cursor()
+    cursor.execute(query_exec, params)
+
+    inserted_id = None
+    if return_id:
+        if use_pg:
+            row = cursor.fetchone()
+            if row:
+                inserted_id = row['id'] if isinstance(row, dict) else row[0]
+        else:
+            inserted_id = cursor.lastrowid
+
+    res = None
+    if fetchone:
+        row = cursor.fetchone()
+        res = dict(row) if row else None
+    elif fetchall:
+        rows = cursor.fetchall()
+        res = [dict(row) for row in rows]
+
+    conn.commit()
+    conn.close()
+
+    if return_id:
+        return inserted_id
+    return res
+
+
 def init_db():
     """
     Initialize the database by creating tables if they don't exist.
+    Supports both SQLite and PostgreSQL syntax automatically.
     """
     conn = get_db_connection()
+    use_pg = is_postgres() and not isinstance(conn, sqlite3.Connection)
     cursor = conn.cursor()
 
+    pk_type = "SERIAL PRIMARY KEY" if use_pg else "INTEGER PRIMARY KEY AUTOINCREMENT"
+
     # ── Table 1: users ──
-    # Stores registered users with identifier (Email or Phone Number)
-    cursor.execute('''
+    cursor.execute(f'''
         CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id {pk_type},
             full_name TEXT NOT NULL,
             identifier TEXT UNIQUE NOT NULL,
             password_hash TEXT NOT NULL,
@@ -59,9 +107,9 @@ def init_db():
     ''')
 
     # ── Table 2: resumes ──
-    cursor.execute('''
+    cursor.execute(f'''
         CREATE TABLE IF NOT EXISTS resumes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id {pk_type},
             user_id INTEGER,
             filename TEXT NOT NULL,
             filepath TEXT NOT NULL,
@@ -74,14 +122,17 @@ def init_db():
 
     # Migration: Add user_id column to resumes if table existed without it
     try:
-        cursor.execute("ALTER TABLE resumes ADD COLUMN user_id INTEGER REFERENCES users(id)")
+        if use_pg:
+            cursor.execute("ALTER TABLE resumes ADD COLUMN user_id INTEGER REFERENCES users(id)")
+        else:
+            cursor.execute("ALTER TABLE resumes ADD COLUMN user_id INTEGER REFERENCES users(id)")
     except Exception:
         pass  # Column already exists
 
     # ── Table 3: analyses ──
-    cursor.execute('''
+    cursor.execute(f'''
         CREATE TABLE IF NOT EXISTS analyses (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id {pk_type},
             resume_id INTEGER NOT NULL,
             ats_score REAL,
             score_breakdown TEXT,
@@ -111,44 +162,30 @@ def create_user(full_name, identifier, password_hash):
     Register a new user in the database.
     Identifier can be an Email Address or Phone Number.
     """
-    conn = get_db_connection()
-    cursor = conn.cursor()
     try:
         clean_identifier = identifier.strip().lower()
-        cursor.execute(
+        return execute_db(
             'INSERT INTO users (full_name, identifier, password_hash) VALUES (?, ?, ?)',
-            (full_name.strip(), clean_identifier, password_hash)
+            (full_name.strip(), clean_identifier, password_hash),
+            return_id=True
         )
-        user_id = cursor.lastrowid
-        conn.commit()
-        return user_id
-    except sqlite3.IntegrityError:
-        return None  # Identifier already registered
-    finally:
-        conn.close()
+    except Exception:
+        return None  # Identifier already registered or DB error
 
 
 def get_user_by_identifier(identifier):
-    """
-    Retrieve user by Email or Phone Number.
-    """
+    """Retrieve user by Email or Phone Number."""
     if not identifier:
         return None
-    conn = get_db_connection()
     clean_identifier = identifier.strip().lower()
-    user = conn.execute('SELECT * FROM users WHERE identifier = ?', (clean_identifier,)).fetchone()
-    conn.close()
-    return dict(user) if user else None
+    return execute_db('SELECT * FROM users WHERE identifier = ?', (clean_identifier,), fetchone=True)
 
 
 def get_user_by_id(user_id):
     """Retrieve user by integer ID."""
     if not user_id:
         return None
-    conn = get_db_connection()
-    user = conn.execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
-    conn.close()
-    return dict(user) if user else None
+    return execute_db('SELECT * FROM users WHERE id = ?', (user_id,), fetchone=True)
 
 
 # ──────────────────────────────────────────────────────────
@@ -156,38 +193,24 @@ def get_user_by_id(user_id):
 # ──────────────────────────────────────────────────────────
 
 def save_resume(filename, filepath, raw_text, parsed_data, user_id=None):
-    """
-    Save a new resume record to the database linked to user_id.
-    """
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(
+    """Save a new resume record to the database linked to user_id."""
+    parsed_json = json.dumps(parsed_data) if isinstance(parsed_data, (dict, list)) else parsed_data
+    return execute_db(
         'INSERT INTO resumes (filename, filepath, raw_text, parsed_data, user_id) VALUES (?, ?, ?, ?, ?)',
-        (filename, filepath, raw_text, json.dumps(parsed_data), user_id)
+        (filename, filepath, raw_text, parsed_json, user_id),
+        return_id=True
     )
-    resume_id = cursor.lastrowid
-    conn.commit()
-    conn.close()
-    return resume_id
 
 
 def get_resume(resume_id):
-    """
-    Retrieve a resume record by its ID.
-    
-    Returns:
-        dict or None: The resume record, or None if not found
-    """
-    conn = get_db_connection()
-    resume = conn.execute('SELECT * FROM resumes WHERE id = ?', (resume_id,)).fetchone()
-    conn.close()
-    
-    if resume:
-        # Convert sqlite3.Row to a regular dict so we can modify it
-        resume_dict = dict(resume)
-        # Parse the JSON string back into a Python dictionary
-        if resume_dict.get('parsed_data'):
-            resume_dict['parsed_data'] = json.loads(resume_dict['parsed_data'])
+    """Retrieve a resume record by its ID."""
+    resume_dict = execute_db('SELECT * FROM resumes WHERE id = ?', (resume_id,), fetchone=True)
+    if resume_dict:
+        if resume_dict.get('parsed_data') and isinstance(resume_dict['parsed_data'], str):
+            try:
+                resume_dict['parsed_data'] = json.loads(resume_dict['parsed_data'])
+            except Exception:
+                pass
         return resume_dict
     return None
 
@@ -195,16 +218,8 @@ def get_resume(resume_id):
 def save_analysis(resume_id, ats_score, score_breakdown, matched_skills,
                   missing_skills, match_percentage, suggestions,
                   job_recommendations, course_recommendations, job_description):
-    """
-    Save an analysis result to the database.
-    
-    All complex data types (lists, dicts) are converted to JSON strings
-    because SQLite only supports TEXT, INTEGER, REAL, and BLOB types.
-    """
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute('''
+    """Save an analysis result to the database."""
+    return execute_db('''
         INSERT INTO analyses 
         (resume_id, ats_score, score_breakdown, matched_skills, missing_skills,
          match_percentage, suggestions, job_recommendations, course_recommendations,
@@ -213,75 +228,74 @@ def save_analysis(resume_id, ats_score, score_breakdown, matched_skills,
     ''', (
         resume_id,
         ats_score,
-        json.dumps(score_breakdown),
-        json.dumps(matched_skills),
-        json.dumps(missing_skills),
+        json.dumps(score_breakdown) if not isinstance(score_breakdown, str) else score_breakdown,
+        json.dumps(matched_skills) if not isinstance(matched_skills, str) else matched_skills,
+        json.dumps(missing_skills) if not isinstance(missing_skills, str) else missing_skills,
         match_percentage,
-        json.dumps(suggestions),
-        json.dumps(job_recommendations),
-        json.dumps(course_recommendations),
+        json.dumps(suggestions) if not isinstance(suggestions, str) else suggestions,
+        json.dumps(job_recommendations) if not isinstance(job_recommendations, str) else job_recommendations,
+        json.dumps(course_recommendations) if not isinstance(course_recommendations, str) else course_recommendations,
         job_description
-    ))
-    
-    analysis_id = cursor.lastrowid
-    conn.commit()
-    conn.close()
-    return analysis_id
+    ), return_id=True)
 
 
 def get_analysis(analysis_id):
     """Retrieve an analysis record by its ID."""
-    conn = get_db_connection()
-    analysis = conn.execute('SELECT * FROM analyses WHERE id = ?', (analysis_id,)).fetchone()
-    conn.close()
-    
-    if analysis:
-        analysis_dict = dict(analysis)
-        # Parse all JSON fields back to Python objects
+    analysis_dict = execute_db('SELECT * FROM analyses WHERE id = ?', (analysis_id,), fetchone=True)
+    if analysis_dict:
         for field in ['score_breakdown', 'matched_skills', 'missing_skills',
                       'suggestions', 'job_recommendations', 'course_recommendations']:
-            if analysis_dict.get(field):
-                analysis_dict[field] = json.loads(analysis_dict[field])
+            if analysis_dict.get(field) and isinstance(analysis_dict[field], str):
+                try:
+                    analysis_dict[field] = json.loads(analysis_dict[field])
+                except Exception:
+                    pass
         return analysis_dict
     return None
 
 
 def get_analysis_by_resume(resume_id):
     """Get the most recent analysis for a given resume."""
-    conn = get_db_connection()
-    analysis = conn.execute(
+    analysis_dict = execute_db(
         'SELECT * FROM analyses WHERE resume_id = ? ORDER BY analysis_date DESC LIMIT 1',
-        (resume_id,)
-    ).fetchone()
-    conn.close()
-    
-    if analysis:
-        analysis_dict = dict(analysis)
+        (resume_id,), fetchone=True
+    )
+    if analysis_dict:
         for field in ['score_breakdown', 'matched_skills', 'missing_skills',
                       'suggestions', 'job_recommendations', 'course_recommendations']:
-            if analysis_dict.get(field):
-                analysis_dict[field] = json.loads(analysis_dict[field])
+            if analysis_dict.get(field) and isinstance(analysis_dict[field], str):
+                try:
+                    analysis_dict[field] = json.loads(analysis_dict[field])
+                except Exception:
+                    pass
         return analysis_dict
     return None
 
 
 def get_all_analyses(user_id=None):
     """Get all analyses with resume info, optionally filtered by user_id."""
-    conn = get_db_connection()
     if user_id:
-        results = conn.execute('''
+        results = execute_db('''
             SELECT a.*, r.filename, r.upload_date 
             FROM analyses a 
             JOIN resumes r ON a.resume_id = r.id 
             WHERE r.user_id = ?
             ORDER BY a.analysis_date DESC
-        ''', (user_id,)).fetchall()
+        ''', (user_id,), fetchall=True)
     else:
-        results = conn.execute('''
+        results = execute_db('''
             SELECT a.*, r.filename, r.upload_date 
             FROM analyses a 
             JOIN resumes r ON a.resume_id = r.id 
             ORDER BY a.analysis_date DESC
-        ''').fetchall()
-    conn.close()
-    return [dict(row) for row in results]
+        ''', fetchall=True)
+    
+    for row in (results or []):
+        for field in ['score_breakdown', 'matched_skills', 'missing_skills',
+                      'suggestions', 'job_recommendations', 'course_recommendations']:
+            if row.get(field) and isinstance(row[field], str):
+                try:
+                    row[field] = json.loads(row[field])
+                except Exception:
+                    pass
+    return results or []

@@ -60,9 +60,23 @@ try:
         print("spaCy model not installed/available; using pure Python NLP processor.")
 except Exception as e:
     print(f"Warning: Could not pre-load spaCy model at startup: {e}")
+def fetch_resume(resume_id):
+    """
+
+    Retrieve resume from database.
+    If not found in DB (e.g. serverless cold start / ephemeral SQLite),
+    fall back to Flask session cached data.
+    """
+    resume = get_resume(resume_id)
+    if not resume and session.get('last_resume'):
+        last = session['last_resume']
+        if not resume_id or str(last.get('id')) == str(resume_id) or resume_id == 0:
+            return last
+    return resume
 
 
 # ──────────────────────────────────────────────────────────
+
 # Health Check Endpoint
 # ──────────────────────────────────────────────────────────
 @app.route('/health', methods=['GET'])
@@ -193,6 +207,15 @@ def upload():
             user_id = session.get('user_id')
             resume_id = save_resume(filename, filepath, raw_text, parsed_data, user_id=user_id)
             
+            # Cache active resume in Flask session for fallback recovery on ephemeral DB restarts
+            session['last_resume'] = {
+                'id': resume_id,
+                'filename': filename,
+                'filepath': filepath,
+                'raw_text': raw_text,
+                'parsed_data': parsed_data
+            }
+            
             if request.is_json or request.headers.get('Accept') == 'application/json':
                 return jsonify({
                     'status': 'success',
@@ -224,12 +247,12 @@ def extracted(resume_id):
     quick preview of parsed fields (name, email, phone, skills).
     The user can then proceed to analysis or re-upload.
     """
-    resume = get_resume(resume_id)
+    resume = fetch_resume(resume_id)
     if not resume:
         return render_template(
             'error.html',
             error_title="Resume Not Found",
-            error_message="The resume record could not be found. Please upload your resume again."
+            error_message="The resume record could not be found. Please upload your resume again to analyze."
         )
 
     return render_template(
@@ -341,12 +364,12 @@ def analyze(resume_id=None):
     if not resume_id:
         return jsonify({'error': 'Resume ID or resume_text required for analysis.'}), 400
 
-    resume = get_resume(resume_id)
+    resume = fetch_resume(resume_id)
     if not resume:
         return render_template(
             'error.html', 
             error_title="Resume Not Found", 
-            error_message="The resume record could not be found."
+            error_message="The resume record could not be found. Please upload your resume again to analyze."
         )
         
     if request.method == 'POST':
@@ -411,12 +434,12 @@ def dashboard(resume_id):
     career recommendations, and improvement tips.
     If no prior job description analysis was saved, performs a general (non-JD) analysis.
     """
-    resume = get_resume(resume_id)
+    resume = fetch_resume(resume_id)
     if not resume:
         return render_template(
             'error.html', 
             error_title="Resume Not Found", 
-            error_message="The resume record could not be found."
+            error_message="The resume record could not be found. Please upload your resume again to view results."
         )
         
     # Check if there is already an analysis saved for this resume
@@ -517,7 +540,7 @@ def download_report(resume_id):
         flash('Please Log In or Sign Up to download your free ATS report.', 'warning')
         return redirect(url_for('login'))
 
-    resume = get_resume(resume_id)
+    resume = fetch_resume(resume_id)
     analysis = get_analysis_by_resume(resume_id)
     
     if not resume or not analysis:

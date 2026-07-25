@@ -28,6 +28,8 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'resume-analyzer-secret-key-change-in-
 # ──────────────────────────────────────────────
 # File Upload & Database Settings (Writable /tmp on Vercel)
 # ──────────────────────────────────────────────
+DATABASE_URL = os.environ.get('DATABASE_URL') or os.environ.get('POSTGRES_URL')
+
 if IS_VERCEL:
     UPLOAD_FOLDER = '/tmp/uploads'
     DATABASE_PATH = '/tmp/database/resume_analyzer.db'
@@ -36,6 +38,7 @@ else:
     UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
     DATABASE_PATH = os.path.join(BASE_DIR, 'database', 'resume_analyzer.db')
     REPORT_FOLDER = os.path.join(BASE_DIR, 'static', 'reports')
+
 
 ALLOWED_EXTENSIONS = {'pdf', 'docx'}
 MIN_CONTENT_LENGTH = 50 * 1024         # 50 KB minimum upload size

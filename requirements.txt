@@ -13,3 +13,8 @@ python-docx>=1.1.2
 
 # PDF Report Generation
 fpdf2>=2.8.3
+
+# PostgreSQL Database Drivers (for Vercel persistence via DATABASE_URL)
+psycopg2-binary>=2.9.9
+pg8000>=1.30.0
+
