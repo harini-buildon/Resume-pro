@@ -3,9 +3,12 @@
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![Flask](https://img.shields.io/badge/Flask-3.0.0-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com)
 [![spaCy](https://img.shields.io/badge/spaCy-NLP-09A3D5?style=for-the-badge&logo=spacy&logoColor=white)](https://spacy.io)
+[![Vercel Live Demo](https://img.shields.io/badge/Vercel-Live%20Demo-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://resume-pro-woad-chi.vercel.app/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 
 An enterprise-grade, AI-driven career optimization platform built with **Python**, **Flask**, **spaCy NLP**, **Scikit-learn**, **SQLite**, and **3D Glassmorphism UI**.
+
+🚀 **Live Vercel Application**: **[https://resume-pro-woad-chi.vercel.app/](https://resume-pro-woad-chi.vercel.app/)**
 
 Live Local Host Server: **[http://127.0.0.1:5000](http://127.0.0.1:5000)**
 
