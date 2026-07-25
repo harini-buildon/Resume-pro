@@ -13,6 +13,10 @@ Key concepts:
 """
 
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # ──────────────────────────────────────────────
 # Base directory & Environment detection
@@ -24,6 +28,11 @@ IS_VERCEL = bool(os.environ.get('VERCEL')) or 'VERCEL' in os.environ
 # Flask Settings
 # ──────────────────────────────────────────────
 SECRET_KEY = os.environ.get('SECRET_KEY', 'resume-analyzer-secret-key-change-in-production')
+
+# Security Settings for Session Cookies
+SESSION_COOKIE_SECURE = True   # Requires HTTPS in production
+SESSION_COOKIE_HTTPONLY = True # Prevent client-side JS from accessing cookies
+
 
 # ──────────────────────────────────────────────
 # File Upload & Database Settings (Writable /tmp on Vercel)

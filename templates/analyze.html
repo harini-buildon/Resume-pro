@@ -21,6 +21,7 @@
                 <!-- Analysis Form Card -->
                 <div class="glass-card animate-slide-up">
                     <form action="{{ url_for('analyze', resume_id=resume_id) }}" method="POST" id="analyze-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <div class="card-body-custom">
                             <!-- Job Description Input -->
                             <div class="mb-4">

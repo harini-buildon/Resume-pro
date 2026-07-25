@@ -19,6 +19,9 @@ import os
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory, jsonify, session
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from config import SECRET_KEY, UPLOAD_FOLDER, MAX_CONTENT_LENGTH
 from database.db import (
     init_db, save_resume, get_resume, save_analysis, 
@@ -44,6 +47,15 @@ from utils.nlp_processor import get_spacy_nlp
 
 # Initialize the Flask App
 app = Flask(__name__)
+
+# Security Extensions
+csrf = CSRFProtect(app)
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://"
+)
 
 # Apply configuration settings
 app.secret_key = SECRET_KEY
@@ -157,6 +169,7 @@ def home():
 
 
 @app.route('/upload', methods=['GET', 'POST'])
+@limiter.limit("10 per minute")
 def upload():
     """
     Module 2 & 3 – Resume Upload & Extraction
@@ -622,6 +635,7 @@ def history():
 # ──────────────────────────────────────────────────────────
 
 @app.route('/api/enhance-bullet', methods=['POST'])
+@csrf.exempt
 def api_enhance_bullet():
     """AI Bullet Point Enhancer Endpoint."""
     data = request.get_json(silent=True) or {}
@@ -631,6 +645,7 @@ def api_enhance_bullet():
 
 
 @app.route('/api/fetch-job-url', methods=['POST'])
+@csrf.exempt
 def api_fetch_job_url():
     """Job Description URL Scraper Endpoint."""
     data = request.get_json(silent=True) or {}
@@ -677,6 +692,7 @@ def cover_letter(resume_id):
 # ──────────────────────────────────────────────────────────
 
 @app.route('/signup', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def signup():
     """
     User Registration Route
@@ -724,6 +740,7 @@ def signup():
 
 
 @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def login():
     """
     User Login Route
