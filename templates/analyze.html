@@ -39,12 +39,58 @@ We are looking for a Data Scientist with experience in Python, Machine Learning,
                                 </div>
                             </div>
                             
+                            <!-- Job Posting URL Extractor -->
+                            <div class="mb-4 p-3 bg-light rounded-3 border">
+                                <label for="job-url-input" class="form-label fw-semibold text-dark mb-1">
+                                    <i class="bi bi-globe me-1 text-primary"></i> Import Job Description from Posting URL
+                                </label>
+                                <div class="input-group">
+                                    <input type="url" id="job-url-input" class="form-control" placeholder="https://linkedin.com/jobs/view/... or https://company.com/careers/job">
+                                    <button type="button" onclick="fetchJobUrlAction()" class="btn btn-outline-primary fw-semibold">
+                                        <i class="bi bi-cloud-download me-1"></i> Extract JD Text
+                                    </button>
+                                </div>
+                                <div class="form-text small" id="url-fetch-msg">Paste a link to any job posting to auto-extract its description.</div>
+                            </div>
+
                             <!-- Sample JD Helper -->
                             <div class="sample-jd-section mb-4">
                                 <button type="button" class="btn btn-outline-secondary btn-sm" id="load-sample-jd">
                                     <i class="bi bi-file-text me-1"></i> Load Sample Job Description
                                 </button>
                             </div>
+
+                            <script>
+                            function fetchJobUrlAction() {
+                                const url = document.getElementById('job-url-input').value.trim();
+                                const msg = document.getElementById('url-fetch-msg');
+                                const textarea = document.getElementById('job-description');
+                                
+                                if (!url) {
+                                    alert("Please enter a job posting URL!");
+                                    return;
+                                }
+                                msg.innerHTML = '<span class="text-primary"><i class="bi bi-arrow-repeat spin me-1"></i> Fetching job description from URL...</span>';
+                                
+                                fetch('/api/fetch-job-url', {
+                                    method: 'POST',
+                                    headers: {'Content-Type': 'application/json'},
+                                    body: JSON.stringify({job_url: url})
+                                })
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (data.status === 'success') {
+                                        textarea.value = data.extracted_text;
+                                        msg.innerHTML = '<span class="text-success"><i class="bi bi-check-circle me-1"></i> Job description extracted successfully!</span>';
+                                    } else {
+                                        msg.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i> ${data.error_message}</span>`;
+                                    }
+                                })
+                                .catch(err => {
+                                    msg.innerHTML = '<span class="text-danger">Failed to connect to job URL. Please paste description manually.</span>';
+                                });
+                            }
+                            </script>
                             
                             <!-- Action Buttons -->
                             <div class="d-flex justify-content-center gap-3">

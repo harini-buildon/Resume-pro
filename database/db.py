@@ -42,28 +42,43 @@ def get_db_connection():
 def init_db():
     """
     Initialize the database by creating tables if they don't exist.
-    
-    This function runs when the app starts for the first time.
-    'IF NOT EXISTS' prevents errors if tables already exist.
     """
     conn = get_db_connection()
     cursor = conn.cursor()
-    
-    # ── Table 1: resumes ──
-    # Stores the uploaded resume file info and extracted content
+
+    # ── Table 1: users ──
+    # Stores registered users with identifier (Email or Phone Number)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            full_name TEXT NOT NULL,
+            identifier TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
+    # ── Table 2: resumes ──
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS resumes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
             filename TEXT NOT NULL,
             filepath TEXT NOT NULL,
             raw_text TEXT,
             parsed_data TEXT,
-            upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
         )
     ''')
-    
-    # ── Table 2: analyses ──
-    # Stores the full analysis results linked to a resume
+
+    # Migration: Add user_id column to resumes if table existed without it
+    try:
+        cursor.execute("ALTER TABLE resumes ADD COLUMN user_id INTEGER REFERENCES users(id)")
+    except Exception:
+        pass  # Column already exists
+
+    # ── Table 3: analyses ──
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS analyses (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -81,39 +96,76 @@ def init_db():
             FOREIGN KEY (resume_id) REFERENCES resumes(id)
         )
     ''')
-    
+
     conn.commit()
     conn.close()
     print("Database initialized successfully!")
 
 
 # ──────────────────────────────────────────────────────────
-# CRUD Operations (Create, Read, Update, Delete)
+# User Auth Helpers
 # ──────────────────────────────────────────────────────────
 
-def save_resume(filename, filepath, raw_text, parsed_data):
+def create_user(full_name, identifier, password_hash):
     """
-    Save a new resume record to the database.
-    
-    Parameters:
-        filename (str): Original name of the uploaded file
-        filepath (str): Where the file is stored on disk
-        raw_text (str): The full extracted text from the resume
-        parsed_data (dict): Structured data extracted from the resume
-    
-    Returns:
-        int: The ID of the newly inserted resume record
+    Register a new user in the database.
+    Identifier can be an Email Address or Phone Number.
     """
     conn = get_db_connection()
     cursor = conn.cursor()
-    
-    # json.dumps() converts a Python dict to a JSON string for storage
+    try:
+        clean_identifier = identifier.strip().lower()
+        cursor.execute(
+            'INSERT INTO users (full_name, identifier, password_hash) VALUES (?, ?, ?)',
+            (full_name.strip(), clean_identifier, password_hash)
+        )
+        user_id = cursor.lastrowid
+        conn.commit()
+        return user_id
+    except sqlite3.IntegrityError:
+        return None  # Identifier already registered
+    finally:
+        conn.close()
+
+
+def get_user_by_identifier(identifier):
+    """
+    Retrieve user by Email or Phone Number.
+    """
+    if not identifier:
+        return None
+    conn = get_db_connection()
+    clean_identifier = identifier.strip().lower()
+    user = conn.execute('SELECT * FROM users WHERE identifier = ?', (clean_identifier,)).fetchone()
+    conn.close()
+    return dict(user) if user else None
+
+
+def get_user_by_id(user_id):
+    """Retrieve user by integer ID."""
+    if not user_id:
+        return None
+    conn = get_db_connection()
+    user = conn.execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
+    conn.close()
+    return dict(user) if user else None
+
+
+# ──────────────────────────────────────────────────────────
+# CRUD Operations (Resumes & Analyses)
+# ──────────────────────────────────────────────────────────
+
+def save_resume(filename, filepath, raw_text, parsed_data, user_id=None):
+    """
+    Save a new resume record to the database linked to user_id.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
     cursor.execute(
-        'INSERT INTO resumes (filename, filepath, raw_text, parsed_data) VALUES (?, ?, ?, ?)',
-        (filename, filepath, raw_text, json.dumps(parsed_data))
+        'INSERT INTO resumes (filename, filepath, raw_text, parsed_data, user_id) VALUES (?, ?, ?, ?, ?)',
+        (filename, filepath, raw_text, json.dumps(parsed_data), user_id)
     )
-    
-    resume_id = cursor.lastrowid  # Get the auto-generated ID
+    resume_id = cursor.lastrowid
     conn.commit()
     conn.close()
     return resume_id
@@ -213,14 +265,23 @@ def get_analysis_by_resume(resume_id):
     return None
 
 
-def get_all_analyses():
-    """Get all analyses with resume info for the history page."""
+def get_all_analyses(user_id=None):
+    """Get all analyses with resume info, optionally filtered by user_id."""
     conn = get_db_connection()
-    results = conn.execute('''
-        SELECT a.*, r.filename, r.upload_date 
-        FROM analyses a 
-        JOIN resumes r ON a.resume_id = r.id 
-        ORDER BY a.analysis_date DESC
-    ''').fetchall()
+    if user_id:
+        results = conn.execute('''
+            SELECT a.*, r.filename, r.upload_date 
+            FROM analyses a 
+            JOIN resumes r ON a.resume_id = r.id 
+            WHERE r.user_id = ?
+            ORDER BY a.analysis_date DESC
+        ''', (user_id,)).fetchall()
+    else:
+        results = conn.execute('''
+            SELECT a.*, r.filename, r.upload_date 
+            FROM analyses a 
+            JOIN resumes r ON a.resume_id = r.id 
+            ORDER BY a.analysis_date DESC
+        ''').fetchall()
     conn.close()
     return [dict(row) for row in results]

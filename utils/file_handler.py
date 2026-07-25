@@ -21,7 +21,7 @@ KEY CONCEPTS FOR BEGINNERS:
 import os
 import uuid
 from werkzeug.utils import secure_filename
-from config import UPLOAD_FOLDER, ALLOWED_EXTENSIONS
+from config import UPLOAD_FOLDER, ALLOWED_EXTENSIONS, MIN_CONTENT_LENGTH, MAX_CONTENT_LENGTH
 
 
 def allowed_file(filename):
@@ -90,6 +90,19 @@ def save_uploaded_file(file):
     
     try:
         file.save(filepath)
+
+        # Validate minimum file size (500 KB)
+        file_size = os.path.getsize(filepath)
+        if file_size < MIN_CONTENT_LENGTH:
+            os.remove(filepath)  # Clean up the too-small file
+            min_kb = MIN_CONTENT_LENGTH // 1024
+            actual_kb = round(file_size / 1024, 1)
+            return False, (
+                f"File is too small ({actual_kb} KB). "
+                f"Please upload a resume that is at least {min_kb} KB. "
+                "Very small files are usually incomplete or corrupted."
+            )
+
         return True, filepath
     except Exception as e:
         return False, f"Failed to save file: {str(e)}"

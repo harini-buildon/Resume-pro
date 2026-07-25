@@ -216,3 +216,21 @@ def generate_suggestions(parsed_data, ats_result, job_match=None):
     suggestions.sort(key=lambda s: priority_order.get(s['priority'], 3))
     
     return suggestions
+
+
+def get_plain_suggestions(parsed_data, ats_result, job_match=None):
+    """
+    Return a flat list of suggestion message strings (no priority/icon metadata).
+    Used by the JSON API (/analyze) response so callers get simple strings like:
+        ["Add a professional email address.", "Add 'Docker' to skills section", ...]
+
+    Parameters:
+        parsed_data (dict): Parsed resume data
+        ats_result  (dict): ATS score result from ats_scorer.py
+        job_match   (dict): Optional job matching results
+
+    Returns:
+        list[str]: Ordered suggestion strings (critical → important → nice-to-have)
+    """
+    rich_suggestions = generate_suggestions(parsed_data, ats_result, job_match)
+    return [s['message'] for s in rich_suggestions]

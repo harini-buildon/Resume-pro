@@ -197,4 +197,34 @@ document.addEventListener('DOMContentLoaded', function() {
             requestAnimationFrame(animateScore);
         }, 150);
     }
+
+    // ──────────────────────────────────────────────────────────
+    // 4. Real-time 3D Card Tilt Effect on Mouse Move
+    // ──────────────────────────────────────────────────────────
+    const tiltCards = document.querySelectorAll('.glass-card, .feature-card, .upload-card, .job-rec-card, .card');
+    
+    tiltCards.forEach(card => {
+        card.style.transformStyle = 'preserve-3d';
+        card.style.transition = 'transform 0.15s ease-out, box-shadow 0.3s ease';
+
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left; // cursor position within card
+            const y = e.clientY - rect.top;
+            
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            // Calculate tilt angle (-8deg to +8deg)
+            const rotateX = ((y - centerY) / centerY) * -7;
+            const rotateY = ((x - centerX) / centerX) * 7;
+            
+            card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(10px) scale(1.02)`;
+        });
+
+        card.addEventListener('mouseleave', () => {
+            card.style.transition = 'transform 0.5s ease-out, box-shadow 0.5s ease';
+            card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0px) scale(1)';
+        });
+    });
 });

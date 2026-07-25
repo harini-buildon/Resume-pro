@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Log In - Resume Pro{% endblock %}
+
+{% block content %}
+<section class="auth-section py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-5 col-md-7">
+                
+                <!-- Login Card -->
+                <div class="glass-card animate-slide-up p-4 p-md-5">
+                    <div class="text-center mb-4">
+                        <div class="auth-icon-badge mb-3">
+                            <i class="bi bi-box-arrow-in-right"></i>
+                        </div>
+                        <h2 class="fw-bold text-primary mb-1">Welcome Back</h2>
+                        <p class="text-muted small">Log in with your Email or Phone Number</p>
+                    </div>
+
+                    <form action="{{ url_for('login') }}" method="POST" id="login-form">
+                        
+                        <!-- Email or Phone Identifier -->
+                        <div class="mb-3">
+                            <label for="identifier" class="form-label fw-semibold text-dark">
+                                <i class="bi bi-person-bounding-box me-1 text-primary"></i> Email or Phone Number
+                            </label>
+                            <input type="text" class="form-control form-control-lg fs-6" id="identifier" name="identifier" 
+                                   placeholder="user@example.com or +15550199" required autocomplete="username">
+                        </div>
+
+                        <!-- Password -->
+                        <div class="mb-4">
+                            <label for="password" class="form-label fw-semibold text-dark">
+                                <i class="bi bi-lock me-1 text-primary"></i> Password
+                            </label>
+                            <input type="password" class="form-control form-control-lg fs-6" id="password" name="password" 
+                                   placeholder="Enter your password" required autocomplete="current-password">
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-primary btn-lg w-100 hero-btn mb-3">
+                            <i class="bi bi-box-arrow-in-right me-2"></i> Log In
+                        </button>
+                    </form>
+
+                    <div class="text-center mt-3 pt-3 border-top">
+                        <span class="text-muted small">Don't have an account?</span>
+                        <a href="{{ url_for('signup') }}" class="fw-bold text-primary ms-1">Sign Up</a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

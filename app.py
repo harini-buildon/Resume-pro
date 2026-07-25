@@ -17,21 +17,30 @@ KEY CONCEPTS FOR BEGINNERS:
 
 import os
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory, jsonify, session
+from werkzeug.security import generate_password_hash, check_password_hash
 from config import SECRET_KEY, UPLOAD_FOLDER, MAX_CONTENT_LENGTH
 from database.db import (
     init_db, save_resume, get_resume, save_analysis, 
-    get_analysis_by_resume, get_all_analyses
+    get_analysis_by_resume, get_all_analyses,
+    create_user, get_user_by_identifier, get_user_by_id
 )
 from utils.file_handler import save_uploaded_file, get_file_extension
 from utils.text_extractor import extract_text
 from utils.resume_parser import parse_resume
 from utils.job_analyzer import analyze_job_match
 from utils.ats_scorer import calculate_ats_score
-from utils.suggestions import generate_suggestions
+from utils.suggestions import generate_suggestions, get_plain_suggestions
 from utils.job_recommender import recommend_jobs
+from utils.company_recommender import recommend_hiring_companies
+from utils.project_recommender import recommend_projects
 from utils.course_recommender import recommend_courses, recommend_general_courses
+from utils.bullet_enhancer import enhance_bullet_point, enhance_resume_bullets_batch
+from utils.cover_letter import generate_cover_letter
+from utils.job_scraper import extract_job_from_url
+from utils.interview_generator import generate_mock_interview
 from utils.report_generator import generate_report
+from utils.nlp_processor import get_spacy_nlp
 
 # Initialize the Flask App
 app = Flask(__name__)
@@ -41,8 +50,32 @@ app.secret_key = SECRET_KEY
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 
-# Initialize the SQLite Database when the app starts
+# Initialize SQLite DB and Cache spaCy model at app startup
 init_db()
+try:
+    get_spacy_nlp()
+    print("spaCy model (en_core_web_sm) loaded successfully at app startup.")
+except Exception as e:
+    print(f"Warning: Could not pre-load spaCy model at startup: {e}")
+
+
+# ──────────────────────────────────────────────────────────
+# Health Check Endpoint
+# ──────────────────────────────────────────────────────────
+@app.route('/health', methods=['GET'])
+def health():
+    """Health check endpoint to verify API and NLP model state."""
+    try:
+        nlp = get_spacy_nlp()
+        spacy_loaded = nlp is not None
+    except Exception:
+        spacy_loaded = False
+        
+    return jsonify({
+        'status': 'healthy',
+        'spacy_loaded': spacy_loaded,
+        'timestamp': datetime.utcnow().isoformat() + 'Z'
+    }), 200
 
 
 # ──────────────────────────────────────────────────────────
@@ -63,16 +96,20 @@ def round_filter(value, precision=0):
 @app.errorhandler(413)
 def request_entity_too_large(error):
     """Handle files that exceed the 16MB file upload limit."""
+    if request.is_json or request.headers.get('Accept') == 'application/json':
+        return jsonify({'error': 'The uploaded file exceeds the 16MB limit.'}), 413
     return render_template(
         'error.html', 
         error_title="File Too Large", 
-        error_message="The uploaded file exceeds the maximum allowed size of 16 MB. Please compress your file or upload a text-only version."
+        error_message="The uploaded file exceeds the maximum allowed size of 16 MB. Please compress your file or upload a text-only version. Accepted file size range: 50 KB – 16 MB."
     ), 413
 
 
 @app.errorhandler(404)
 def page_not_found(error):
     """Handle non-existent URLs (404 Page Not Found)."""
+    if request.is_json or request.headers.get('Accept') == 'application/json':
+        return jsonify({'error': 'Resource not found'}), 404
     return render_template(
         'error.html', 
         error_title="Page Not Found", 
@@ -83,6 +120,8 @@ def page_not_found(error):
 @app.errorhandler(500)
 def internal_server_error(error):
     """Handle internal python crashes gracefully."""
+    if request.is_json or request.headers.get('Accept') == 'application/json':
+        return jsonify({'error': 'Internal server error'}), 500
     return render_template(
         'error.html', 
         error_title="Internal Server Error", 
@@ -96,10 +135,7 @@ def internal_server_error(error):
 
 @app.route('/')
 def home():
-    """
-    Module 1 – Home Page
-    Renders the professional landing page.
-    """
+    """Module 1 – Home Page"""
     return render_template('index.html')
 
 
@@ -108,77 +144,93 @@ def upload():
     """
     Module 2 & 3 – Resume Upload & Extraction
     GET:  Display the file upload form.
-    POST: Receive the uploaded file, validate it, save it, 
-          extract text, parse structured data, save to DB, and redirect.
+    POST: Receive uploaded file (PDF/DOCX), extract raw text, parse data.
+          Supports both HTML web form and JSON API clients.
     """
     if request.method == 'POST':
-        # Check if the post request has the file part
         if 'resume' not in request.files:
+            if request.is_json or request.headers.get('Accept') == 'application/json':
+                return jsonify({'error': 'No file part in the request under key "resume".'}), 400
             flash('No file part in the request.', 'danger')
             return redirect(request.url)
             
         file = request.files['resume']
-        
-        # Validate and save file securely
-        success, result = save_uploaded_file(file)
-        
-        if not success:
-            flash(result, 'danger')  # Result is the error message
+        if file.filename == '':
+            if request.is_json or request.headers.get('Accept') == 'application/json':
+                return jsonify({'error': 'No selected file.'}), 400
+            flash('No file selected.', 'danger')
             return redirect(request.url)
         
-        filepath = result  # On success, result is the absolute filepath
+        success, result = save_uploaded_file(file)
+        if not success:
+            if request.is_json or request.headers.get('Accept') == 'application/json':
+                return jsonify({'error': result}), 400
+            flash(result, 'danger')
+            return redirect(request.url)
+        
+        filepath = result
         filename = file.filename
         
-        # Step 3: Extract text from the saved file
         text_success, text_result = extract_text(filepath)
-        
         if not text_success:
-            flash(text_result, 'danger')
-            # Clean up uploaded file if extraction failed
             if os.path.exists(filepath):
                 os.remove(filepath)
+            if request.is_json or request.headers.get('Accept') == 'application/json':
+                return jsonify({'error': text_result}), 400
+            flash(text_result, 'danger')
             return redirect(request.url)
         
         raw_text = text_result
-        
-        # Step 4: Parse basic resume content (Name, Email, Skills, etc.)
         try:
             parsed_data = parse_resume(raw_text)
         except Exception as e:
-            flash(f"Error parsing resume structure: {str(e)}", 'warning')
             parsed_data = {}
             
-        # Step 5: Save resume & raw text & parsed structure in SQLite
         try:
-            resume_id = save_resume(filename, filepath, raw_text, parsed_data)
+            user_id = session.get('user_id')
+            resume_id = save_resume(filename, filepath, raw_text, parsed_data, user_id=user_id)
+            
+            if request.is_json or request.headers.get('Accept') == 'application/json':
+                return jsonify({
+                    'status': 'success',
+                    'resume_id': resume_id,
+                    'filename': filename,
+                    'raw_text': raw_text,
+                    'parsed_data': parsed_data
+                }), 200
+                
             flash('Resume uploaded and text extracted successfully!', 'success')
-            # Redirect to the extracted text review page
             return redirect(url_for('extracted', resume_id=resume_id))
         except Exception as e:
+            if request.is_json or request.headers.get('Accept') == 'application/json':
+                return jsonify({'error': f"Database error: {str(e)}"}), 500
             flash(f"Database error while saving resume: {str(e)}", 'danger')
             return redirect(request.url)
             
-    # GET Request: Renders the upload form
     return render_template('upload.html')
 
 
+# ──────────────────────────────────────────────────────────
+# Extracted Text Review Route
+# ──────────────────────────────────────────────────────────
 @app.route('/extracted/<int:resume_id>')
 def extracted(resume_id):
     """
-    Module 3 – Text Extraction Display
-    Loads the resume from the database and shows the raw text.
-    Allows the candidate to preview how the parser read their layout.
+    Module 4 – Extracted Text Review
+    Shows the raw text extracted from the uploaded resume along with a
+    quick preview of parsed fields (name, email, phone, skills).
+    The user can then proceed to analysis or re-upload.
     """
     resume = get_resume(resume_id)
     if not resume:
         return render_template(
-            'error.html', 
-            error_title="Resume Not Found", 
-            error_message="The resume record could not be found in our database."
+            'error.html',
+            error_title="Resume Not Found",
+            error_message="The resume record could not be found. Please upload your resume again."
         )
-        
+
     return render_template(
-        'extracted.html', 
+        'extracted.html',
         resume_id=resume_id,
         filename=resume['filename'],
         text=resume['raw_text'],
@@ -186,14 +238,106 @@ def extracted(resume_id):
     )
 
 
+@app.route('/analyze', methods=['POST'])
 @app.route('/analyze/<int:resume_id>', methods=['GET', 'POST'])
-def analyze(resume_id):
+def analyze(resume_id=None):
     """
-    Module 6 – Job Description Input & Analysis
-    GET:  Display job description input text box.
-    POST: Compare resume against job description using TF-IDF & Cosine Similarity.
-          Saves results into database and redirects to the dashboard.
+    Module 6 & JSON API – Job Description Input & Hybrid ATS Analysis
+    Supports:
+    1. Direct JSON API request: POST /analyze with body {"resume_text": "...", "job_description": "..."}
+    2. HTML Form submit: POST /analyze/<resume_id> with job_description form field.
     """
+    # 1. API Stateless JSON analysis
+    if request.is_json or (request.method == 'POST' and not request.form and request.data):
+        try:
+            data = request.get_json(silent=True) or {}
+            resume_text = data.get('resume_text', '').strip()
+            job_description = data.get('job_description', '').strip()
+
+            # Allow lookup by resume_id if raw text not provided
+            if not resume_text and data.get('resume_id'):
+                r = get_resume(data.get('resume_id'))
+                if r:
+                    resume_text = r['raw_text']
+
+            if not resume_text:
+                return jsonify({
+                    'error': 'Missing required field: "resume_text" (or a valid "resume_id").'
+                }), 400
+
+            if not job_description:
+                return jsonify({
+                    'error': 'Missing required field: "job_description".'
+                }), 400
+
+            # Parse resume sections (best-effort; fall back gracefully)
+            try:
+                parsed = parse_resume(resume_text)
+            except Exception:
+                parsed = {'skills': []}
+
+            # Run hybrid NLP + TF-IDF analysis
+            job_match = analyze_job_match(resume_text, parsed.get('skills', []), job_description)
+
+            # Compute ATS score using the hybrid formula:
+            #   ATS = round( (keyword_match_percent * 0.7) + (tfidf_similarity * 0.3) )
+            ats_result = calculate_ats_score(parsed, resume_text, job_match)
+
+            # Build plain-string suggestions for the API (no icon/priority metadata)
+            plain_suggestions = get_plain_suggestions(parsed, ats_result, job_match)
+
+            # Build a transparent breakdown so callers can see every component
+            breakdown = ats_result.get('breakdown', {})
+            transparent_breakdown = {
+                'formula': breakdown.get('formula', ''),
+                'keyword_weight': breakdown.get('keyword_weight', 0.7),
+                'similarity_weight': breakdown.get('similarity_weight', 0.3),
+                'weighted_keyword_match_percent': breakdown.get('weighted_keyword_match_percent',
+                                                               job_match['match_percentage']),
+                'similarity_score': breakdown.get('similarity_score',
+                                                  job_match['similarity_score']),
+                'section_scores': {
+                    k: v for k, v in breakdown.items()
+                    if isinstance(v, dict) and 'score' in v
+                }
+            }
+
+            # Recommend actively hiring companies & internships based on candidate experience & skills
+            job_recs = recommend_jobs(parsed.get('skills', []))
+            hiring_info = recommend_hiring_companies(
+                parsed.get('skills', []),
+                ats_score=ats_result['total_score'],
+                parsed_data=parsed,
+                raw_text=resume_text,
+                job_recommendations=job_recs
+            )
+
+            # Recommend resume-boosting projects (Basic, Medium, High complexity)
+            project_recs = recommend_projects(
+                parsed.get('skills', []),
+                missing_skills=job_match.get('missing_skills', [])
+            )
+
+            return jsonify({
+                'ats_score': ats_result['total_score'],
+                'matched_keywords': job_match['matched_skills'],
+                'missing_keywords': job_match['missing_skills'],
+                'keyword_match_percent': job_match['match_percentage'],
+                'similarity_score': job_match['similarity_score'],
+                'suggestions': plain_suggestions,
+                'breakdown': transparent_breakdown,
+                'hiring_companies': hiring_info['companies'],
+                'candidate_profile': hiring_info['experience_level'],
+                'project_recommendations': project_recs
+            }), 200
+
+        except Exception as e:
+            return jsonify({'error': f"Server analysis failure: {str(e)}"}), 500
+
+    # 2. HTML Web Form analysis route (/analyze/<int:resume_id>)
+    if not resume_id:
+        return jsonify({'error': 'Resume ID or resume_text required for analysis.'}), 400
+
     resume = get_resume(resume_id)
     if not resume:
         return render_template(
@@ -210,35 +354,28 @@ def analyze(resume_id):
             return redirect(request.url)
             
         try:
-            # 1. Compare skills & calculate cosine similarity
             job_match = analyze_job_match(
                 resume['raw_text'], 
                 resume['parsed_data'].get('skills', []), 
                 job_description
             )
             
-            # 2. Calculate ATS Score with job match factors
             ats_result = calculate_ats_score(
                 resume['parsed_data'], 
                 resume['raw_text'], 
                 job_match
             )
             
-            # 3. Generate suggestions
             suggestions = generate_suggestions(
                 resume['parsed_data'], 
                 ats_result, 
                 job_match
             )
             
-            # 4. Job & course recommendations
             job_recommendations = recommend_jobs(resume['parsed_data'].get('skills', []))
-            
-            # Recommend course material based on missing JD skills
             missing_skills = job_match.get('missing_skills', [])
             course_recommendations = recommend_courses(missing_skills)
             
-            # 5. Save analysis to SQLite database
             save_analysis(
                 resume_id=resume_id,
                 ats_score=ats_result['total_score'],
@@ -259,8 +396,8 @@ def analyze(resume_id):
             flash(f"Error during job analysis: {str(e)}", 'danger')
             return redirect(request.url)
             
-    # GET Request: Renders the paste JD form
     return render_template('analyze.html', resume_id=resume_id)
+
 
 
 @app.route('/dashboard/<int:resume_id>')
@@ -326,6 +463,28 @@ def dashboard(resume_id):
             'match_percentage': analysis['match_percentage']
         }
         
+    # Recommend active hiring companies and internships (Startups, Tech Giants, Remote/WFH, Office)
+    hiring_info = recommend_hiring_companies(
+        resume['parsed_data'].get('skills', []),
+        ats_score=analysis['ats_score'],
+        parsed_data=resume['parsed_data'],
+        raw_text=resume.get('raw_text', ''),
+        job_recommendations=analysis['job_recommendations']
+    )
+
+    # Recommend 3-tier projects to boost resume value (Basic, Medium, High)
+    missing_skills_list = job_match.get('missing_skills', []) if job_match else []
+    project_recs = recommend_projects(
+        resume['parsed_data'].get('skills', []),
+        missing_skills=missing_skills_list
+    )
+
+    # Generate mock interview questions based on candidate skills & missing skill gaps
+    interview_questions = generate_mock_interview(
+        resume['parsed_data'].get('skills', []),
+        missing_skills=missing_skills_list
+    )
+
     return render_template(
         'dashboard.html',
         resume_id=resume_id,
@@ -337,7 +496,11 @@ def dashboard(resume_id):
         job_match=job_match,
         suggestions=analysis['suggestions'],
         job_recommendations=analysis['job_recommendations'],
-        course_recommendations=analysis['course_recommendations']
+        course_recommendations=analysis['course_recommendations'],
+        hiring_info=hiring_info,
+        hiring_companies=hiring_info['companies'],
+        project_recommendations=project_recs,
+        interview_questions=interview_questions
     )
 
 
@@ -345,9 +508,12 @@ def dashboard(resume_id):
 def download_report(resume_id):
     """
     Module 12 – Downloadable PDF Report
-    Uses the report generator utility to compile a professional PDF report on the fly 
-    and sends it to the user's browser as an attachment.
+    Requires user authentication (Log In or Sign Up) before allowing free PDF report downloads.
     """
+    if not session.get('user_id'):
+        flash('Please Log In or Sign Up to download your free ATS report.', 'warning')
+        return redirect(url_for('login'))
+
     resume = get_resume(resume_id)
     analysis = get_analysis_by_resume(resume_id)
     
@@ -404,12 +570,12 @@ def history():
     past projects and download old reports.
     """
     try:
-        db_history = get_all_analyses()
+        user_id = session.get('user_id')
+        db_history = get_all_analyses(user_id=user_id)
         
         # Clean formatting on dates for display
         for item in db_history:
             if 'analysis_date' in item:
-                # Format SQL date string: '2026-07-15 11:20:00' -> 'July 15, 2026, 11:20 AM'
                 try:
                     dt = datetime.strptime(item['analysis_date'], '%Y-%m-%d %H:%M:%S')
                     item['analysis_date'] = dt.strftime('%B %d, %Y, %I:%M %p')
@@ -420,6 +586,153 @@ def history():
         db_history = []
         
     return render_template('history.html', history=db_history)
+
+
+# ──────────────────────────────────────────────────────────
+# AI Enhancements & Tool Endpoints
+# ──────────────────────────────────────────────────────────
+
+@app.route('/api/enhance-bullet', methods=['POST'])
+def api_enhance_bullet():
+    """AI Bullet Point Enhancer Endpoint."""
+    data = request.get_json(silent=True) or {}
+    bullet_text = data.get('bullet_text', '')
+    enhanced = enhance_bullet_point(bullet_text)
+    return jsonify(enhanced), 200
+
+
+@app.route('/api/fetch-job-url', methods=['POST'])
+def api_fetch_job_url():
+    """Job Description URL Scraper Endpoint."""
+    data = request.get_json(silent=True) or {}
+    job_url = data.get('job_url', '')
+    res = extract_job_from_url(job_url)
+    return jsonify(res), 200 if res['status'] == 'success' else 400
+
+
+@app.route('/cover-letter/<int:resume_id>')
+def cover_letter(resume_id):
+    """AI Cover Letter Generator Route."""
+    resume = get_resume(resume_id)
+    analysis = get_analysis_by_resume(resume_id)
+
+    if not resume:
+        return render_template(
+            'error.html',
+            error_title="Resume Not Found",
+            error_message="Could not find resume record for cover letter generation."
+        )
+
+    candidate_name = resume['parsed_data'].get('name', 'Candidate')
+    candidate_skills = resume['parsed_data'].get('skills', [])
+    job_title = "Software Engineer"
+    company_name = "Target Hiring Company"
+
+    cl_data = generate_cover_letter(
+        candidate_name=candidate_name,
+        candidate_skills=candidate_skills,
+        job_title=job_title,
+        company_name=company_name
+    )
+
+    return render_template(
+        'cover_letter.html',
+        resume_id=resume_id,
+        cover_letter=cl_data,
+        candidate_name=candidate_name
+    )
+
+
+# ──────────────────────────────────────────────────────────
+# User Authentication Routes (Sign Up, Log In, Log Out)
+# ──────────────────────────────────────────────────────────
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    """
+    User Registration Route
+    Supports signing up with Full Name, Email or Phone Number, and Password.
+    """
+    if session.get('user_id'):
+        return redirect(url_for('home'))
+
+    if request.method == 'POST':
+        full_name = request.form.get('full_name', '').strip()
+        identifier = request.form.get('identifier', '').strip()
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
+
+        if not full_name or not identifier or not password:
+            flash('All fields are required.', 'danger')
+            return render_template('signup.html')
+
+        if password != confirm_password:
+            flash('Passwords do not match. Please re-enter your password.', 'danger')
+            return render_template('signup.html')
+
+        if len(password) < 6:
+            flash('Password must be at least 6 characters long.', 'danger')
+            return render_template('signup.html')
+
+        existing = get_user_by_identifier(identifier)
+        if existing:
+            flash('An account with this Email or Phone Number already exists. Please Log In.', 'warning')
+            return redirect(url_for('login'))
+
+        password_hash = generate_password_hash(password)
+        user_id = create_user(full_name, identifier, password_hash)
+
+        if user_id:
+            session['user_id'] = user_id
+            session['user_name'] = full_name
+            session['user_identifier'] = identifier
+            flash(f"Welcome, {full_name}! Your account was created successfully.", 'success')
+            return redirect(url_for('upload'))
+        else:
+            flash('Failed to create account. Please try again.', 'danger')
+
+    return render_template('signup.html')
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """
+    User Login Route
+    Authenticates user via Email or Phone Number + Password.
+    """
+    if session.get('user_id'):
+        return redirect(url_for('home'))
+
+    if request.method == 'POST':
+        identifier = request.form.get('identifier', '').strip()
+        password = request.form.get('password', '')
+
+        if not identifier or not password:
+            flash('Please provide your Email or Phone Number and Password.', 'danger')
+            return render_template('login.html')
+
+        user = get_user_by_identifier(identifier)
+        if user and check_password_hash(user['password_hash'], password):
+            session['user_id'] = user['id']
+            session['user_name'] = user['full_name']
+            session['user_identifier'] = user['identifier']
+            flash(f"Welcome back, {user['full_name']}!", 'success')
+            return redirect(url_for('upload'))
+        else:
+            flash('Invalid Email/Phone Number or Password. Please try again.', 'danger')
+
+    return render_template('login.html')
+
+
+@app.route('/logout')
+def logout():
+    """
+    Log Out Route
+    Clears active user session.
+    """
+    session.clear()
+    flash('You have been logged out successfully.', 'info')
+    return redirect(url_for('home'))
 
 
 # ──────────────────────────────────────────────────────────

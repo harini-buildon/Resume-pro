@@ -56,6 +56,29 @@
                             <i class="bi bi-clock-history me-1"></i> History
                         </a>
                     </li>
+                    {% if session.get('user_name') %}
+                    <li class="nav-item ms-lg-2">
+                        <span class="nav-link text-white fw-semibold">
+                            <i class="bi bi-person-circle text-info me-1"></i> {{ session.get('user_name') }}
+                        </span>
+                    </li>
+                    <li class="nav-item ms-lg-1">
+                        <a class="btn btn-outline-light btn-sm mt-1" href="{{ url_for('logout') }}">
+                            <i class="bi bi-box-arrow-right me-1"></i> Logout
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item ms-lg-2">
+                        <a class="nav-link" href="{{ url_for('login') }}">
+                            <i class="bi bi-box-arrow-in-right me-1"></i> Log In
+                        </a>
+                    </li>
+                    <li class="nav-item ms-lg-1">
+                        <a class="btn btn-primary btn-sm mt-1 px-3 fw-bold" href="{{ url_for('signup') }}">
+                            <i class="bi bi-person-plus me-1"></i> Sign Up
+                        </a>
+                    </li>
+                    {% endif %}
                 </ul>
             </div>
         </div>
@@ -117,7 +140,7 @@
             </div>
             <hr class="footer-divider">
             <div class="text-center py-2">
-                <small class="footer-copyright">&copy; 2026 Resume Pro. Built as a B.Tech Final Year Project.</small>
+                <small class="footer-copyright">&copy; 2026 Pro Resume Analyzer. All Rights Reserved.</small>
             </div>
         </div>
     </footer>

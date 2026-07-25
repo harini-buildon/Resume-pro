@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up - Resume Pro{% endblock %}
+
+{% block content %}
+<section class="auth-section py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-5 col-md-7">
+                
+                <!-- Sign Up Card -->
+                <div class="glass-card animate-slide-up p-4 p-md-5">
+                    <div class="text-center mb-4">
+                        <div class="auth-icon-badge mb-3">
+                            <i class="bi bi-person-plus-fill"></i>
+                        </div>
+                        <h2 class="fw-bold text-primary mb-1">Create Account</h2>
+                        <p class="text-muted small">Sign up with your Email or Phone Number</p>
+                    </div>
+
+                    <form action="{{ url_for('signup') }}" method="POST" id="signup-form">
+                        
+                        <!-- Full Name -->
+                        <div class="mb-3">
+                            <label for="full_name" class="form-label fw-semibold text-dark">
+                                <i class="bi bi-person me-1 text-primary"></i> Full Name
+                            </label>
+                            <input type="text" class="form-control form-control-lg fs-6" id="full_name" name="full_name" 
+                                   placeholder="e.g. Jane Doe" required autocomplete="name">
+                        </div>
+
+                        <!-- Email or Phone Identifier -->
+                        <div class="mb-3">
+                            <label for="identifier" class="form-label fw-semibold text-dark">
+                                <i class="bi bi-envelope-at me-1 text-primary"></i> Email or Phone Number
+                            </label>
+                            <input type="text" class="form-control form-control-lg fs-6" id="identifier" name="identifier" 
+                                   placeholder="user@example.com or +15550199" required autocomplete="username">
+                            <div class="form-text small">Enter your email address or mobile phone number with country code.</div>
+                        </div>
+
+                        <!-- Password -->
+                        <div class="mb-3">
+                            <label for="password" class="form-label fw-semibold text-dark">
+                                <i class="bi bi-lock me-1 text-primary"></i> Password
+                            </label>
+                            <input type="password" class="form-control form-control-lg fs-6" id="password" name="password" 
+                                   placeholder="At least 6 characters" required autocomplete="new-password" minlength="6">
+                        </div>
+
+                        <!-- Confirm Password -->
+                        <div class="mb-4">
+                            <label for="confirm_password" class="form-label fw-semibold text-dark">
+                                <i class="bi bi-shield-check me-1 text-primary"></i> Confirm Password
+                            </label>
+                            <input type="password" class="form-control form-control-lg fs-6" id="confirm_password" name="confirm_password" 
+                                   placeholder="Repeat password" required autocomplete="new-password" minlength="6">
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-primary btn-lg w-100 hero-btn mb-3">
+                            <i class="bi bi-check-circle me-2"></i> Create Account
+                        </button>
+                    </form>
+
+                    <div class="text-center mt-3 pt-3 border-top">
+                        <span class="text-muted small">Already have an account?</span>
+                        <a href="{{ url_for('login') }}" class="fw-bold text-primary ms-1">Log In</a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

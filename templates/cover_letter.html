@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}AI Cover Letter - Resume Pro{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <div class="container">
+        
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2 fw-bold text-primary mb-1">
+                    <i class="bi bi-file-earmark-text-fill me-2"></i>AI-Generated Cover Letter
+                </h1>
+                <p class="text-muted mb-0">Tailored for <strong>{{ candidate_name }}</strong></p>
+            </div>
+            <div>
+                <a href="{{ url_for('dashboard', resume_id=resume_id) }}" class="btn btn-outline-secondary me-2">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+                </a>
+                <button onclick="copyCoverLetter()" class="btn btn-primary hero-btn">
+                    <i class="bi bi-clipboard-check me-1"></i> Copy to Clipboard
+                </button>
+            </div>
+        </div>
+
+        <!-- Cover Letter Glass Card -->
+        <div class="row justify-content-center">
+            <div class="col-lg-9">
+                <div class="glass-card animate-slide-up p-4 p-md-5 shadow-lg border">
+                    <div class="p-4 bg-white rounded-3 border font-monospace text-dark" id="cover-letter-content" style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.7;">
+{{ cover_letter.cover_letter_text }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<script>
+function copyCoverLetter() {
+    const text = document.getElementById('cover-letter-content').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        alert("Cover Letter copied to clipboard!");
+    });
+}
+</script>
+{% endblock %}

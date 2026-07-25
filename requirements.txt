@@ -27,3 +27,7 @@ fpdf2>=2.8.3
 
 # Secure filenames for uploaded files
 Werkzeug>=3.1.3
+
+# NLP - spaCy for keyword extraction & entity recognition
+spacy>=3.7.0
+

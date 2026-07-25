@@ -31,7 +31,8 @@ SECRET_KEY = 'resume-analyzer-secret-key-change-in-production'
 # ──────────────────────────────────────────────
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
 ALLOWED_EXTENSIONS = {'pdf', 'docx'}
-MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max upload size
+MIN_CONTENT_LENGTH = 50 * 1024         # 50 KB minimum upload size
+MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB maximum upload size
 
 # ──────────────────────────────────────────────
 # Database Settings
