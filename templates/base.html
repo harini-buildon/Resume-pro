@@ -51,11 +51,13 @@
                             <i class="bi bi-cloud-upload me-1"></i> Upload
                         </a>
                     </li>
+                    {% if session.get('user_id') %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('history') }}">
                             <i class="bi bi-clock-history me-1"></i> History
                         </a>
                     </li>
+                    {% endif %}
                     {% if session.get('user_name') %}
                     <li class="nav-item ms-lg-2">
                         <span class="nav-link text-white fw-semibold">
@@ -126,7 +128,9 @@
                     <ul class="footer-links list-unstyled">
                         <li><a href="{{ url_for('home') }}">Home</a></li>
                         <li><a href="{{ url_for('upload') }}">Upload Resume</a></li>
+                        {% if session.get('user_id') %}
                         <li><a href="{{ url_for('history') }}">Analysis History</a></li>
+                        {% endif %}
                     </ul>
                 </div>
             </div>

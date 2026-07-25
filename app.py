@@ -592,11 +592,14 @@ def download_report(resume_id):
 def history():
     """
     Analysis History Route
-    Loads all previous resume records and analysis results to let the user review
-    past projects and download old reports.
+    Requires user login. Displays only the authenticated user's private history.
     """
+    user_id = session.get('user_id')
+    if not user_id:
+        flash('Please Log In or Sign Up to view your private analysis history.', 'warning')
+        return redirect(url_for('login'))
+
     try:
-        user_id = session.get('user_id')
         db_history = get_all_analyses(user_id=user_id)
         
         # Clean formatting on dates for display

@@ -273,22 +273,17 @@ def get_analysis_by_resume(resume_id):
 
 
 def get_all_analyses(user_id=None):
-    """Get all analyses with resume info, optionally filtered by user_id."""
-    if user_id:
-        results = execute_db('''
-            SELECT a.*, r.filename, r.upload_date 
-            FROM analyses a 
-            JOIN resumes r ON a.resume_id = r.id 
-            WHERE r.user_id = ?
-            ORDER BY a.analysis_date DESC
-        ''', (user_id,), fetchall=True)
-    else:
-        results = execute_db('''
-            SELECT a.*, r.filename, r.upload_date 
-            FROM analyses a 
-            JOIN resumes r ON a.resume_id = r.id 
-            ORDER BY a.analysis_date DESC
-        ''', fetchall=True)
+    """Get all analyses for a specific user. Returns empty list if no user_id is provided for privacy."""
+    if not user_id:
+        return []
+
+    results = execute_db('''
+        SELECT a.*, r.filename, r.upload_date 
+        FROM analyses a 
+        JOIN resumes r ON a.resume_id = r.id 
+        WHERE r.user_id = ?
+        ORDER BY a.analysis_date DESC
+    ''', (user_id,), fetchall=True)
     
     for row in (results or []):
         for field in ['score_breakdown', 'matched_skills', 'missing_skills',
