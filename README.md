@@ -18,6 +18,13 @@ An enterprise-grade, AI-driven career optimization platform built with **Python*
 | ⚡ **Live Vercel Application** | **[https://resume-pro-woad-chi.vercel.app/](https://resume-pro-woad-chi.vercel.app/)** | **Active (Serverless)** |
 | 💻 **Live Local Host Server** | **[http://127.0.0.1:5000](http://127.0.0.1:5000)** | **Active (Gunicorn / Flask)** |
 
+### 🛡️ Key Features & Protections Active
+- **3D Dashboard**: Mouse-tilt cards, holographic gradient header, dead-centered ATS score gauge with radial glass aura.
+- **Hybrid ATS Matching**: 50% Resume Structure + 50% Job Description Skill Overlap & TF-IDF Similarity.
+- **PDF Report Generator**: FPDF2 margin resets & safe layout calculations.
+- **Security**: `.env` credential isolation, `.gitignore`, MIME magic-bytes upload validation, SSRF URL protection.
+- **Production Infrastructure**: Gunicorn WSGI multi-worker config (`Procfile`), Redis rate-limit support, DB connection pooling.
+
 ---
 
 ## 🌟 Key Features
