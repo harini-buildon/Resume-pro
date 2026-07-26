@@ -2,6 +2,10 @@
 
 {% block title %}Dashboard - Resume Pro{% endblock %}
 
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard-3d.css') }}">
+{% endblock %}
+
 {% block content %}
 <section class="dashboard-section py-4">
     <div class="container">
@@ -17,15 +21,17 @@
                         Complete resume analysis for <strong>{{ parsed_data.get('name', 'Candidate') }}</strong>
                     </p>
                 </div>
-                <div class="col-md-5 text-md-end mt-3 mt-md-0">
-                    <a href="{{ url_for('cover_letter', resume_id=resume_id) }}" 
-                       class="btn btn-outline-primary hero-btn me-2">
-                        <i class="bi bi-file-earmark-text me-1"></i> AI Cover Letter
-                    </a>
-                    <a href="{{ url_for('download_report', resume_id=resume_id) }}" 
-                       class="btn btn-primary hero-btn">
-                        <i class="bi bi-download me-1"></i> Download Report
-                    </a>
+                <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                    <div class="d-flex gap-3 justify-content-md-end flex-wrap">
+                        <a href="{{ url_for('cover_letter', resume_id=resume_id) }}"
+                           class="btn btn-outline-primary hero-btn">
+                            <i class="bi bi-file-earmark-text me-1"></i> AI Cover Letter
+                        </a>
+                        <a href="{{ url_for('download_report', resume_id=resume_id) }}"
+                           class="btn btn-primary hero-btn">
+                            <i class="bi bi-download me-1"></i> Download Report
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -35,37 +41,73 @@
             <!-- ATS Score Card -->
             <div class="col-lg-4">
                 <div class="glass-card h-100 animate-slide-up">
-                    <div class="card-header-custom">
-                        <i class="bi bi-speedometer2 me-2"></i><strong>ATS Score</strong>
+                    <div class="card-header-custom d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="bi bi-speedometer2 me-2 text-primary"></i><strong>ATS Score</strong>
+                        </div>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle small">Overall Match</span>
                     </div>
-                    <div class="card-body-custom text-center">
+                    <div class="card-body-custom d-flex flex-column align-items-center justify-content-center p-4 text-center">
+                        <!-- 3D ATS Gauge Container -->
                         <div class="ats-score-circle" data-score="{{ ats_result.total_score }}">
+                            <!-- Radial Glow Backdrop Disc -->
+                            <div class="score-glass-backdrop"></div>
+                            
                             <svg viewBox="0 0 120 120" class="score-svg">
-                                <circle cx="60" cy="60" r="52" class="score-bg-ring"/>
-                                <circle cx="60" cy="60" r="52" class="score-ring"
-                                        stroke-dasharray="326.73"
-                                        stroke-dashoffset="{{ 326.73 - (326.73 * ats_result.total_score / 100) }}"/>
+                                <defs>
+                                    <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        {% if ats_result.total_score >= 70 %}
+                                        <stop offset="0%"   stop-color="#059669"/>
+                                        <stop offset="100%" stop-color="#10b981"/>
+                                        {% elif ats_result.total_score >= 50 %}
+                                        <stop offset="0%"   stop-color="#d97706"/>
+                                        <stop offset="100%" stop-color="#f59e0b"/>
+                                        {% else %}
+                                        <stop offset="0%"   stop-color="#dc2626"/>
+                                        <stop offset="100%" stop-color="#f43f5e"/>
+                                        {% endif %}
+                                    </linearGradient>
+                                </defs>
+                                <circle cx="60" cy="60" r="50" class="score-bg-ring"/>
+                                <circle cx="60" cy="60" r="50" class="score-ring"
+                                        stroke-dasharray="314.16"
+                                        stroke-dashoffset="{{ 314.16 - (314.16 * ats_result.total_score / 100) }}"/>
                             </svg>
+                            
+                            <!-- Centered Score Value -->
                             <div class="score-value">
                                 <span class="score-number" id="ats-score-number">{{ ats_result.total_score }}</span>
                                 <span class="score-total">/100</span>
                             </div>
                         </div>
-                        <div class="score-label mt-2">
+                        
+                        <!-- Status Badge Pill -->
+                        <div class="score-label mt-1">
                             {% if ats_result.total_score >= 70 %}
-                                <span class="badge bg-success-subtle text-success fs-6">
-                                    <i class="bi bi-check-circle me-1"></i> Good
+                                <span class="badge score-badge-pill bg-success-subtle text-success border border-success-subtle fs-6 px-3 py-2">
+                                    <i class="bi bi-check-circle-fill me-1.5"></i> Good ATS Compatibility
                                 </span>
                             {% elif ats_result.total_score >= 50 %}
-                                <span class="badge bg-warning-subtle text-warning fs-6">
-                                    <i class="bi bi-exclamation-circle me-1"></i> Needs Improvement
+                                <span class="badge score-badge-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle fs-6 px-3 py-2">
+                                    <i class="bi bi-exclamation-triangle-fill me-1.5"></i> Needs Improvement
                                 </span>
                             {% else %}
-                                <span class="badge bg-danger-subtle text-danger fs-6">
-                                    <i class="bi bi-x-circle me-1"></i> Poor
+                                <span class="badge score-badge-pill bg-danger-subtle text-danger border border-danger-subtle fs-6 px-3 py-2">
+                                    <i class="bi bi-x-circle-fill me-1.5"></i> Low Compatibility
                                 </span>
                             {% endif %}
                         </div>
+
+                        <!-- ATS Explanatory Note -->
+                        <p class="ats-summary-text text-muted small mt-3 mb-0">
+                            {% if job_match %}
+                            <i class="bi bi-bullseye text-primary me-1"></i>
+                            Target JD Match: <strong>{{ job_match.match_percentage }}%</strong> ({{ job_match.matched_skills | length }} matched, {{ job_match.missing_skills | length }} missing)
+                            {% else %}
+                            <i class="bi bi-shield-check text-primary me-1"></i>
+                            Weighted analysis across skills, formatting, contact info & experience.
+                            {% endif %}
+                        </p>
                     </div>
                 </div>
             </div>
@@ -677,11 +719,12 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard-3d.js') }}"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const ctx = document.getElementById('skillsRadarChart');
         if (!ctx) return;
-        
+
         {% if job_match %}
         const matchedSkillsCount = {{ job_match.matched_skills | length }};
         const missingSkillsCount = {{ job_match.missing_skills | length }};
@@ -691,8 +734,7 @@
         const missingSkillsCount = 0;
         const chartLabels = ['Total Resume Skills', ''];
         {% endif %}
-        
-        // If there are no skills matched and no job match, default to a gray ring
+
         if (matchedSkillsCount === 0 && missingSkillsCount === 0) {
             new Chart(ctx.getContext('2d'), {
                 type: 'doughnut',
@@ -711,14 +753,8 @@
                 labels: chartLabels,
                 datasets: [{
                     data: [matchedSkillsCount, missingSkillsCount],
-                    backgroundColor: [
-                        'rgba(5, 150, 105, 0.8)', // Success green
-                        'rgba(220, 38, 38, 0.8)'  // Danger red
-                    ],
-                    borderColor: [
-                        'rgba(5, 150, 105, 1)',
-                        'rgba(220, 38, 38, 1)'
-                    ],
+                    backgroundColor: ['rgba(5,150,105,0.8)', 'rgba(220,38,38,0.8)'],
+                    borderColor:     ['rgba(5,150,105,1)',   'rgba(220,38,38,1)'],
                     borderWidth: 1
                 }]
             },

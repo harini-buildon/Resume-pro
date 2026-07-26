@@ -8,7 +8,35 @@ Scrapes and extracts clean job description text from job posting URLs
 import urllib.request
 import urllib.parse
 import re
+import socket
+import ipaddress
 from html.parser import HTMLParser
+
+# ── SSRF protection: block requests to private / internal IP ranges ──
+_BLOCKED_NETWORKS = [
+    ipaddress.ip_network('10.0.0.0/8'),
+    ipaddress.ip_network('172.16.0.0/12'),
+    ipaddress.ip_network('192.168.0.0/16'),
+    ipaddress.ip_network('127.0.0.0/8'),
+    ipaddress.ip_network('169.254.0.0/16'),  # Link-local
+    ipaddress.ip_network('::1/128'),          # IPv6 loopback
+]
+
+
+def _is_safe_url(url):
+    """Return False if the URL resolves to a private/internal IP address."""
+    try:
+        parsed = urllib.parse.urlparse(url)
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+        ip = ipaddress.ip_address(socket.gethostbyname(hostname))
+        for network in _BLOCKED_NETWORKS:
+            if ip in network:
+                return False
+        return True
+    except Exception:
+        return False  # Fail closed on resolution errors
 
 
 class SimpleTextHTMLParser(HTMLParser):
@@ -49,6 +77,15 @@ def extract_job_from_url(job_url):
             'extracted_text': "",
             'job_url': job_url,
             'error_message': "Invalid URL format. URL must start with http:// or https://"
+        }
+
+    # SSRF protection: block requests to private/internal IP ranges
+    if not _is_safe_url(job_url):
+        return {
+            'status': 'error',
+            'extracted_text': "",
+            'job_url': job_url,
+            'error_message': "URL points to a restricted internal address and cannot be fetched."
         }
 
     try:

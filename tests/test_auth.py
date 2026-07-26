@@ -23,10 +23,12 @@ from database.db import init_db, create_user, get_user_by_identifier, get_user_b
 class TestAuthentication(unittest.TestCase):
 
     def setUp(self):
+        app.config['TESTING'] = True
+        app.config['WTF_CSRF_ENABLED'] = False       # Disable CSRF for test client
+        app.config['SESSION_COOKIE_SECURE'] = False   # Allow non-HTTPS session in tests
+        app.config['SECRET_KEY'] = 'test-secret-key'
         init_db()
         self.client = app.test_client()
-        app.config['TESTING'] = True
-        app.config['SECRET_KEY'] = 'test-secret-key'
 
     def test_create_and_fetch_user_by_email(self):
         identifier = f"test_email_{uuid.uuid4().hex[:8]}@example.com"

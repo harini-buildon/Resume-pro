@@ -18,8 +18,9 @@
                 <a href="{{ url_for('dashboard', resume_id=resume_id) }}" class="btn btn-outline-secondary me-2">
                     <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
                 </a>
-                <button onclick="copyCoverLetter()" class="btn btn-primary hero-btn">
-                    <i class="bi bi-clipboard-check me-1"></i> Copy to Clipboard
+                <button onclick="copyCoverLetter()" class="btn btn-primary hero-btn" id="copy-btn">
+                    <i class="bi bi-clipboard-check me-1" id="copy-icon"></i>
+                    <span id="copy-label">Copy to Clipboard</span>
                 </button>
             </div>
         </div>
@@ -41,9 +42,51 @@
 <script>
 function copyCoverLetter() {
     const text = document.getElementById('cover-letter-content').innerText;
-    navigator.clipboard.writeText(text).then(() => {
-        alert("Cover Letter copied to clipboard!");
-    });
+    const btn = document.getElementById('copy-btn');
+    const icon = document.getElementById('copy-icon');
+    const label = document.getElementById('copy-label');
+
+    const showSuccess = () => {
+        icon.className = 'bi bi-check-circle me-1';
+        label.textContent = 'Copied!';
+        btn.classList.replace('btn-primary', 'btn-success');
+        setTimeout(() => {
+            icon.className = 'bi bi-clipboard-check me-1';
+            label.textContent = 'Copy to Clipboard';
+            btn.classList.replace('btn-success', 'btn-primary');
+        }, 2500);
+    };
+
+    const showError = () => {
+        icon.className = 'bi bi-exclamation-triangle me-1';
+        label.textContent = 'Copy failed – select text manually';
+        btn.classList.replace('btn-primary', 'btn-warning');
+        setTimeout(() => {
+            icon.className = 'bi bi-clipboard-check me-1';
+            label.textContent = 'Copy to Clipboard';
+            btn.classList.replace('btn-warning', 'btn-primary');
+        }, 3000);
+    };
+
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(showSuccess).catch(showError);
+    } else {
+        // Fallback for HTTP (non-HTTPS) environments
+        try {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showSuccess();
+        } catch (e) {
+            showError();
+        }
+    }
 }
 </script>
 {% endblock %}

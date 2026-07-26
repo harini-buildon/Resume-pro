@@ -91,7 +91,7 @@ def save_uploaded_file(file):
     try:
         file.save(filepath)
 
-        # Validate minimum file size (500 KB)
+        # Validate minimum file size (50 KB)
         file_size = os.path.getsize(filepath)
         if file_size < MIN_CONTENT_LENGTH:
             os.remove(filepath)  # Clean up the too-small file
@@ -101,6 +101,24 @@ def save_uploaded_file(file):
                 f"File is too small ({actual_kb} KB). "
                 f"Please upload a resume that is at least {min_kb} KB. "
                 "Very small files are usually incomplete or corrupted."
+            )
+
+        # Validate magic bytes (file signature) to prevent disguised uploads
+        # e.g. someone renaming 'malware.exe' as 'resume.pdf' to bypass extension check
+        with open(filepath, 'rb') as f:
+            header = f.read(8)
+
+        valid_magic = False
+        if file_extension == 'pdf' and header[:4] == b'%PDF':
+            valid_magic = True
+        elif file_extension == 'docx' and header[:2] == b'PK':  # DOCX is a ZIP archive
+            valid_magic = True
+
+        if not valid_magic:
+            os.remove(filepath)
+            return False, (
+                f"The uploaded file does not appear to be a valid {file_extension.upper()}. "
+                "Please ensure you are uploading a genuine PDF or DOCX resume file."
             )
 
         return True, filepath

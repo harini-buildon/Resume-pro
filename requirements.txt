@@ -28,3 +28,9 @@ Flask-Limiter>=3.8.0
 # AI Models
 google-genai>=0.3.0
 
+# Production WSGI Server (load-balanced multi-worker deployments)
+gunicorn>=21.2.0
+
+# Redis (optional: shared rate-limit storage across gunicorn workers)
+# Set REDIS_URL env var to activate. Falls back to memory:// if not set.
+redis>=5.0.0

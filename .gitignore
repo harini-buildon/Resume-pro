@@ -15,7 +15,7 @@ env/
 .venv/
 
 # Database
-database/*.db
+database/*.db*
 
 # Uploaded files
 uploads/*

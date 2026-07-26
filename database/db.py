@@ -4,12 +4,26 @@ database/db.py – Database Setup & Multi-Engine Helper Functions (SQLite & Post
 This module handles all database operations for the Resume Analyzer.
 It seamlessly supports SQLite (local offline development) and PostgreSQL / Supabase / Neon
 (persistent serverless database for production on Vercel) when DATABASE_URL is set.
+
+Load-Balancing / Connection Pooling:
+- SQLite: Uses threading.local() so each worker thread reuses a single connection,
+  preventing "database is locked" errors under concurrent load.
+- PostgreSQL: Uses psycopg2 ThreadedConnectionPool (min=2, max=10) so connections
+  are reused across requests instead of opened/closed per query.
 """
 
 import sqlite3
 import json
 import os
+import threading
 from config import DATABASE_PATH, DATABASE_URL
+
+# ── Thread-local storage for SQLite connections (one connection per thread) ──
+_sqlite_local = threading.local()
+
+# ── PostgreSQL connection pool (created once at module load) ──
+_pg_pool = None
+_pg_pool_lock = threading.Lock()
 
 
 def is_postgres():
@@ -17,33 +31,72 @@ def is_postgres():
     return bool(DATABASE_URL and DATABASE_URL.startswith(('postgres://', 'postgresql://')))
 
 
+def _get_pg_pool():
+    """
+    Return (or lazily create) a shared PostgreSQL ThreadedConnectionPool.
+    Pool size: min=2, max=10 connections — suitable for free-tier DBs (Neon/Supabase).
+    """
+    global _pg_pool
+    if _pg_pool is not None:
+        return _pg_pool
+    with _pg_pool_lock:
+        if _pg_pool is None:  # Double-checked locking
+            try:
+                import psycopg2
+                import psycopg2.extras
+                import psycopg2.pool
+                url = DATABASE_URL
+                if url.startswith('postgres://'):
+                    url = url.replace('postgres://', 'postgresql://', 1)
+                _pg_pool = psycopg2.pool.ThreadedConnectionPool(
+                    minconn=2, maxconn=10,
+                    dsn=url,
+                    cursor_factory=psycopg2.extras.RealDictCursor
+                )
+                print("PostgreSQL connection pool created (min=2, max=10).")
+            except Exception as e:
+                print(f"PostgreSQL pool creation failed: {e}. Will fall back to SQLite.")
+    return _pg_pool
+
+
 def get_db_connection():
     """
-    Create and return a database connection (PostgreSQL if DATABASE_URL is set, else SQLite).
+    Return a database connection.
+    - PostgreSQL: borrows a connection from the ThreadedConnectionPool.
+    - SQLite: reuses a thread-local connection (one per worker thread).
     """
     if is_postgres():
-        url = DATABASE_URL
-        if url.startswith('postgres://'):
-            url = url.replace('postgres://', 'postgresql://', 1)
-        try:
-            import psycopg2
-            import psycopg2.extras
-            conn = psycopg2.connect(url, cursor_factory=psycopg2.extras.RealDictCursor)
-            return conn
-        except Exception as e:
-            print(f"PostgreSQL connection error: {e}. Falling back to SQLite.")
+        pool = _get_pg_pool()
+        if pool:
+            try:
+                return pool.getconn()  # Borrow from pool
+            except Exception as e:
+                print(f"PostgreSQL pool.getconn() failed: {e}. Falling back to SQLite.")
 
-    # Default to SQLite for local development
-    os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
-    conn = sqlite3.connect(DATABASE_PATH)
-    conn.row_factory = sqlite3.Row  # Return rows as dict-like objects
-    return conn
+    # Thread-local SQLite connection (avoids repeated open/close per query)
+    def _is_conn_alive(conn):
+        """Check if the SQLite connection is still usable."""
+        try:
+            conn.execute('SELECT 1')
+            return True
+        except Exception:
+            return False
+
+    existing = getattr(_sqlite_local, 'conn', None)
+    if not existing or not _is_conn_alive(existing):
+        os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
+        _sqlite_local.conn = sqlite3.connect(DATABASE_PATH, check_same_thread=False)
+        _sqlite_local.conn.row_factory = sqlite3.Row
+        _sqlite_local.conn.execute('PRAGMA journal_mode=WAL')  # WAL mode allows concurrent reads
+        _sqlite_local.conn.execute('PRAGMA busy_timeout=5000')  # Wait 5s before "db locked" error
+    return _sqlite_local.conn
 
 
 def execute_db(query, params=(), fetchone=False, fetchall=False, return_id=False):
     """
     Unified database query executor supporting both SQLite and PostgreSQL.
-    Handles parameter placeholder translation (? -> %s) and returning inserted IDs.
+    - PostgreSQL: borrows/returns connections from the ThreadedConnectionPool.
+    - SQLite: reuses the thread-local connection; does NOT close it after each query.
     """
     conn = get_db_connection()
     use_pg = is_postgres() and not isinstance(conn, sqlite3.Connection)
@@ -56,32 +109,48 @@ def execute_db(query, params=(), fetchone=False, fetchall=False, return_id=False
     else:
         query_exec = query
 
-    cursor = conn.cursor()
-    cursor.execute(query_exec, params)
+    try:
+        cursor = conn.cursor()
+        cursor.execute(query_exec, params)
 
-    inserted_id = None
-    if return_id:
-        if use_pg:
+        inserted_id = None
+        if return_id:
+            if use_pg:
+                row = cursor.fetchone()
+                if row:
+                    inserted_id = row['id'] if isinstance(row, dict) else row[0]
+            else:
+                inserted_id = cursor.lastrowid
+
+        res = None
+        if fetchone:
             row = cursor.fetchone()
-            if row:
-                inserted_id = row['id'] if isinstance(row, dict) else row[0]
-        else:
-            inserted_id = cursor.lastrowid
+            res = dict(row) if row else None
+        elif fetchall:
+            rows = cursor.fetchall()
+            res = [dict(row) for row in rows]
 
-    res = None
-    if fetchone:
-        row = cursor.fetchone()
-        res = dict(row) if row else None
-    elif fetchall:
-        rows = cursor.fetchall()
-        res = [dict(row) for row in rows]
+        conn.commit()
 
-    conn.commit()
-    conn.close()
+        if return_id:
+            return inserted_id
+        return res
 
-    if return_id:
-        return inserted_id
-    return res
+    except Exception:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        raise
+    finally:
+        # PostgreSQL: return connection back to pool; SQLite: keep thread-local alive
+        if use_pg:
+            try:
+                pool = _get_pg_pool()
+                if pool:
+                    pool.putconn(conn)
+            except Exception:
+                pass
 
 
 def init_db():

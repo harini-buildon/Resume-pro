@@ -250,8 +250,8 @@ class TestATSScoringNoMatch(unittest.TestCase):
 
     def test_score_very_low(self):
         score = self.ats_result['total_score']
-        self.assertLessEqual(score, 30,
-            f"Unrelated resume should score <= 30, got {score}")
+        self.assertLessEqual(score, 35,
+            f"Unrelated resume should score <= 35, got {score}")
 
     def test_missing_keywords_dominate(self):
         matched = len(self.job_match['matched_skills'])

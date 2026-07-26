@@ -22,7 +22,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from config import SECRET_KEY, UPLOAD_FOLDER, MAX_CONTENT_LENGTH
+from config import SECRET_KEY, UPLOAD_FOLDER, MAX_CONTENT_LENGTH, SESSION_COOKIE_SECURE, SESSION_COOKIE_HTTPONLY
 from database.db import (
     init_db, save_resume, get_resume, save_analysis, 
     get_analysis_by_resume, get_all_analyses,
@@ -50,17 +50,31 @@ app = Flask(__name__)
 
 # Security Extensions
 csrf = CSRFProtect(app)
+
+# ── Bug 3: Rate limiter – use Redis when available (shared across workers) ──
+_limiter_storage = "memory://"  # Default: in-memory (single-worker local dev)
+_redis_url = os.environ.get('REDIS_URL')
+if _redis_url:
+    try:
+        _limiter_storage = _redis_url
+        print(f"Rate limiter: using Redis ({_redis_url[:30]}...)")
+    except Exception:
+        print("Rate limiter: Redis URL set but unusable; falling back to memory://")
+
 limiter = Limiter(
     get_remote_address,
     app=app,
     default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://"
+    storage_uri=_limiter_storage
 )
 
-# Apply configuration settings
+# ── Bug 2: Apply secure cookie settings from config ──
 app.secret_key = SECRET_KEY
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
+app.config['SESSION_COOKIE_SECURE'] = SESSION_COOKIE_SECURE
+app.config['SESSION_COOKIE_HTTPONLY'] = SESSION_COOKIE_HTTPONLY
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 # Initialize SQLite DB and Cache spaCy model at app startup (if installed)
 init_db()
@@ -93,18 +107,31 @@ def fetch_resume(resume_id):
 # ──────────────────────────────────────────────────────────
 @app.route('/health', methods=['GET'])
 def health():
-    """Health check endpoint to verify API and NLP model state."""
+    """Health check endpoint — used by load balancers and uptime monitors."""
+    status = {}
+
+    # Check spaCy NLP model
     try:
         nlp = get_spacy_nlp()
-        spacy_loaded = nlp is not None
+        status['spacy_loaded'] = nlp is not None
     except Exception:
-        spacy_loaded = False
-        
+        status['spacy_loaded'] = False
+
+    # Check database connectivity
+    try:
+        from database.db import execute_db
+        execute_db('SELECT 1', fetchone=True)
+        status['db'] = 'ok'
+    except Exception as db_err:
+        status['db'] = f'error: {str(db_err)[:80]}'
+
+    http_status = 200 if status.get('db') == 'ok' else 503
     return jsonify({
-        'status': 'healthy',
-        'spacy_loaded': spacy_loaded,
+        'status': 'healthy' if http_status == 200 else 'degraded',
+        'spacy_loaded': status['spacy_loaded'],
+        'db': status['db'],
         'timestamp': datetime.utcnow().isoformat() + 'Z'
-    }), 200
+    }), http_status
 
 
 # ──────────────────────────────────────────────────────────
@@ -585,19 +612,35 @@ def download_report(resume_id):
             course_recommendations=analysis['course_recommendations'],
             job_match=job_match
         )
-        
+
         # Send PDF file from dynamic report folder
         return send_from_directory(
             os.path.dirname(filepath),
             filename,
             as_attachment=True
         )
-        
+
     except Exception as e:
+        # Bug 4 fix: log the error, clean up any partial file, return specific message
+        import logging
+        logging.exception("Report generation failed for resume_id=%s", resume_id)
+        # Clean up temp file if partially written
+        try:
+            if 'filepath' in dir() and filepath and os.path.exists(filepath):
+                os.remove(filepath)
+        except Exception:
+            pass
+        error_msg = str(e)
+        if 'fpdf' in error_msg.lower() or 'FPDF' in error_msg:
+            friendly = "PDF library error. Please try again or contact support."
+        elif 'UnicodeEncode' in error_msg or 'latin-1' in error_msg:
+            friendly = "Your resume contains unsupported characters. The PDF could not be generated."
+        else:
+            friendly = f"An error occurred while compiling your PDF document: {error_msg}"
         return render_template(
-            'error.html', 
-            error_title="Report Generation Error", 
-            error_message=f"An error occurred while compiling your PDF document: {str(e)}"
+            'error.html',
+            error_title="Report Generation Error",
+            error_message=friendly
         )
 
 
@@ -614,15 +657,20 @@ def history():
 
     try:
         db_history = get_all_analyses(user_id=user_id)
-        
+
         # Clean formatting on dates for display
+        # Bug 6 fix: handle both SQLite ('2024-07-26 15:32:15') and PostgreSQL
+        # ('2024-07-26 15:32:15.123456') timestamp formats
         for item in db_history:
-            if 'analysis_date' in item:
+            if 'analysis_date' in item and item['analysis_date']:
                 try:
-                    dt = datetime.strptime(item['analysis_date'], '%Y-%m-%d %H:%M:%S')
+                    raw = str(item['analysis_date'])
+                    # Strip microseconds and timezone suffix if present
+                    raw = raw.split('.')[0].split('+')[0].strip()
+                    dt = datetime.strptime(raw, '%Y-%m-%d %H:%M:%S')
                     item['analysis_date'] = dt.strftime('%B %d, %Y, %I:%M %p')
                 except Exception:
-                    pass
+                    pass  # Keep original string if parsing fails
     except Exception as e:
         flash(f"Failed to load history: {str(e)}", 'danger')
         db_history = []
@@ -657,7 +705,13 @@ def api_fetch_job_url():
 @app.route('/cover-letter/<int:resume_id>')
 def cover_letter(resume_id):
     """AI Cover Letter Generator Route."""
-    resume = get_resume(resume_id)
+    # Bug 8 fix: require authentication before generating cover letters
+    if not session.get('user_id'):
+        flash('Please Log In or Sign Up to generate a cover letter.', 'warning')
+        return redirect(url_for('login'))
+
+    # Bug 1 fix: use fetch_resume() for cold-start / ephemeral DB resilience
+    resume = fetch_resume(resume_id)
     analysis = get_analysis_by_resume(resume_id)
 
     if not resume:

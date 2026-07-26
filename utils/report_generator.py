@@ -38,15 +38,15 @@ class ResumeReport(FPDF):
     
     def header(self):
         """Add a header to every page."""
-        # Set font: Arial Bold, 14pt
         self.set_font('Helvetica', 'B', 14)
         self.set_text_color(30, 58, 138)  # Dark blue
+        self.set_x(self.l_margin)
         self.cell(0, 10, 'Resume Pro - Analysis Report', align='C', new_x="LMARGIN", new_y="NEXT")
         
         # Draw a blue line under the header
         self.set_draw_color(59, 130, 246)  # Blue line
         self.set_line_width(0.5)
-        self.line(10, 18, 200, 18)
+        self.line(self.l_margin, 18, self.w - self.r_margin, 18)
         self.ln(5)
     
     def footer(self):
@@ -54,6 +54,7 @@ class ResumeReport(FPDF):
         self.set_y(-15)  # Position 15mm from bottom
         self.set_font('Helvetica', 'I', 8)
         self.set_text_color(128, 128, 128)  # Gray
+        self.set_x(self.l_margin)
         self.cell(0, 10, f'Page {self.page_no()}/{{nb}}', align='C')
     
     def section_title(self, title):
@@ -61,19 +62,21 @@ class ResumeReport(FPDF):
         self.ln(3)
         self.set_font('Helvetica', 'B', 12)
         self.set_text_color(30, 58, 138)  # Dark blue
-        self.cell(0, 8, title, new_x="LMARGIN", new_y="NEXT")
+        self.set_x(self.l_margin)
+        self.cell(0, 8, sanitize_text(title), new_x="LMARGIN", new_y="NEXT")
         self.set_draw_color(219, 234, 254)  # Light blue line
         self.set_line_width(0.3)
-        self.line(10, self.get_y(), 200, self.get_y())
+        self.line(self.l_margin, self.get_y(), self.w - self.r_margin, self.get_y())
         self.ln(3)
     
     def body_text(self, text):
         """Add regular body text."""
         self.set_font('Helvetica', '', 10)
         self.set_text_color(55, 65, 81)  # Dark gray
-        # Replace problematic Unicode characters with ASCII equivalents
         safe_text = sanitize_text(text)
-        self.multi_cell(0, 5, safe_text)
+        self.set_x(self.l_margin)
+        avail_w = max(10, self.w - self.r_margin - self.l_margin)
+        self.multi_cell(avail_w, 5, safe_text, new_x="LMARGIN", new_y="NEXT")
         self.ln(1)
     
     def key_value(self, key, value):
@@ -81,19 +84,23 @@ class ResumeReport(FPDF):
         self.set_font('Helvetica', 'B', 10)
         self.set_text_color(55, 65, 81)
         safe_key = sanitize_text(key)
-        self.cell(45, 6, f'{safe_key}:', new_x="END")
+        safe_val = sanitize_text(str(value))
+        self.set_x(self.l_margin)
+        self.cell(40, 6, f'{safe_key}:', new_x="END")
         self.set_font('Helvetica', '', 10)
-        safe_value = sanitize_text(str(value))
-        self.cell(0, 6, safe_value, new_x="LMARGIN", new_y="NEXT")
+        avail_w = max(10, self.w - self.r_margin - self.get_x())
+        self.multi_cell(avail_w, 6, safe_val, new_x="LMARGIN", new_y="NEXT")
     
     def bullet_point(self, text):
         """Add a bullet point item."""
         self.set_font('Helvetica', '', 10)
         self.set_text_color(55, 65, 81)
         safe_text = sanitize_text(text)
+        self.set_x(self.l_margin)
         self.cell(5, 5, '', new_x="END")  # Indent
         self.cell(5, 5, '-', new_x="END")  # Bullet character (safe ASCII)
-        self.multi_cell(0, 5, f' {safe_text}')
+        avail_w = max(10, self.w - self.r_margin - self.get_x())
+        self.multi_cell(avail_w, 5, f' {safe_text}', new_x="LMARGIN", new_y="NEXT")
 
     def badge(self, text, color='blue'):
         """Add an inline badge/tag."""

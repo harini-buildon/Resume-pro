@@ -265,29 +265,14 @@ def score_keyword_match(parsed_data, job_match=None):
     
     If no job description:
     - Scores based on the number of industry-relevant skills found
-    
-    Parameters:
-        parsed_data (dict): Parsed resume data
-        job_match (dict): Optional job matching results
     """
-    score = 0
-    
-    if job_match and job_match.get('match_percentage', 0) > 0:
-        # Score based on job match percentage
-        match_pct = job_match['match_percentage']
-        if match_pct >= 80:
-            score = 10
-        elif match_pct >= 60:
-            score = 8
-        elif match_pct >= 40:
-            score = 6
-        elif match_pct >= 20:
-            score = 4
-        else:
-            score = 2
-        details = f"Job match: {match_pct}%"
+    if job_match is not None and 'match_percentage' in job_match:
+        match_pct = float(job_match.get('match_percentage', 0.0))
+        score = min(10, max(0, round((match_pct / 100.0) * 10)))
+        matched_cnt = len(job_match.get('matched_skills', []))
+        missing_cnt = len(job_match.get('missing_skills', []))
+        details = f"JD Match: {match_pct}% ({matched_cnt} matched, {missing_cnt} missing)"
     else:
-        # No job description – score based on skill variety
         skills_count = len(parsed_data.get('skills', []))
         if skills_count >= 10:
             score = 10
@@ -307,9 +292,13 @@ def score_keyword_match(parsed_data, job_match=None):
 def calculate_ats_score(parsed_data, raw_text, job_match=None):
     """
     Calculate ATS compatibility score.
-    Returns the sum of all section scores (max 100 points).
-    If job_match is provided, it incorporates the keyword match percentage 
-    into the 10-point keyword score section and includes extra breakdown data.
+    
+    Without Job Description:
+    - Sum of structural section scores (contact, skills, education, experience, projects, certs, formatting, keyword variety) out of 100.
+    
+    With Job Description:
+    - Blends structural section quality (50%) with direct Job Description relevance (50%):
+      JD relevance = (weighted keyword match % * 0.7) + (TF-IDF similarity % * 0.3).
     """
     contact_score, contact_details = score_contact_info(parsed_data)
     skills_score, skills_details = score_skills(parsed_data)
@@ -324,7 +313,24 @@ def calculate_ats_score(parsed_data, raw_text, job_match=None):
                      experience_score + projects_score + certs_score + 
                      format_score + keyword_score)
 
+    if job_match and ('match_percentage' in job_match or 'similarity_score' in job_match):
+        kw_match_pct = float(job_match.get('match_percentage', 0.0))
+        sim_score = float(job_match.get('similarity_score', 0.0))
+        
+        # Calculate JD specific relevance score out of 100
+        jd_relevance = (kw_match_pct * 0.7) + (sim_score * 0.3)
+        
+        # Blend structural score (50%) and JD relevance score (50%)
+        final_score = min(100, max(0, round((section_total * 0.5) + (jd_relevance * 0.5))))
+        formula_str = 'ATS (JD Match) = 50% Resume Structure + 50% Job Match (70% Keywords + 30% Semantic Similarity)'
+    else:
+        final_score = min(100, max(0, section_total))
+        kw_match_pct = 0.0
+        sim_score = 0.0
+        formula_str = 'ATS = contact(15) + skills(20) + education(15) + experience(15) + projects(10) + certifications(5) + formatting(10) + keyword_match(10)'
+
     breakdown = {
+        'formula': formula_str,
         'contact_info': {'score': contact_score, 'max': 15, 'label': 'Contact Information', 'details': contact_details},
         'skills': {'score': skills_score, 'max': 20, 'label': 'Technical Skills', 'details': skills_details},
         'education': {'score': education_score, 'max': 15, 'label': 'Education', 'details': education_details},
@@ -336,14 +342,11 @@ def calculate_ats_score(parsed_data, raw_text, job_match=None):
     }
 
     if job_match:
-        kw_match_pct = float(job_match.get('match_percentage', 0.0))
-        sim_score = float(job_match.get('similarity_score', 0.0))
-        
         breakdown['weighted_keyword_match_percent'] = kw_match_pct
         breakdown['similarity_score'] = sim_score
 
     return {
-        'total_score': section_total,
+        'total_score': final_score,
         'breakdown': breakdown
     }
 
