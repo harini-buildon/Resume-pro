@@ -188,7 +188,15 @@ def sanitize_text(text):
             cleaned += ch
         except (UnicodeEncodeError, UnicodeDecodeError):
             cleaned += '?'
-    return cleaned
+
+    # Break long unspaced words (>35 chars) so FPDF multi_cell never encounters horizontal space overflow
+    words = cleaned.split(' ')
+    processed = []
+    for w in words:
+        if len(w) > 35:
+            w = ' '.join([w[i:i+35] for i in range(0, len(w), 35)])
+        processed.append(w)
+    return ' '.join(processed)
 
 
 def generate_report(parsed_data, ats_result, suggestions, job_recommendations,
