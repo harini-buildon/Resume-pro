@@ -3,7 +3,7 @@ database/db.py – Database Setup & Multi-Engine Helper Functions (SQLite & Post
 ====================================================================================
 This module handles all database operations for the Resume Analyzer.
 It seamlessly supports SQLite (local offline development) and PostgreSQL / Supabase / Neon
-(persistent serverless database for production on Vercel) when DATABASE_URL is set.
+(persistent cloud database for production) when DATABASE_URL is set.
 
 Load-Balancing / Connection Pooling:
 - SQLite: Uses threading.local() so each worker thread reuses a single connection,
