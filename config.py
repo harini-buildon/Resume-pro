@@ -19,9 +19,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ──────────────────────────────────────────────
-# Base directory
+# Base directory & Environment detection
 # ──────────────────────────────────────────────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+IS_VERCEL = bool(os.environ.get('VERCEL')) or 'VERCEL' in os.environ
 
 # ──────────────────────────────────────────────
 # Flask Settings
@@ -34,22 +35,26 @@ SESSION_COOKIE_HTTPONLY = True # Prevent client-side JS from accessing cookies
 
 
 # ──────────────────────────────────────────────
-# File Upload & Database Settings
+# File Upload & Database Settings (Writable /tmp on Vercel / Cloud Functions)
 # ──────────────────────────────────────────────
 DATABASE_URL = os.environ.get('DATABASE_URL') or os.environ.get('POSTGRES_URL')
 
-UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
-DATABASE_PATH = os.path.join(BASE_DIR, 'database', 'resume_analyzer.db')
-REPORT_FOLDER = os.path.join(BASE_DIR, 'static', 'reports')
+if IS_VERCEL:
+    UPLOAD_FOLDER = '/tmp/uploads'
+    DATABASE_PATH = '/tmp/database/resume_analyzer.db'
+    REPORT_FOLDER = '/tmp/reports'
+else:
+    UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
+    DATABASE_PATH = os.path.join(BASE_DIR, 'database', 'resume_analyzer.db')
+    REPORT_FOLDER = os.path.join(BASE_DIR, 'static', 'reports')
 
 ALLOWED_EXTENSIONS = {'pdf', 'docx'}
 MIN_CONTENT_LENGTH = 50              # 50 bytes minimum upload size (prevents empty files)
 MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB maximum upload size
 
-# Ensure target directories exist safely
-try:
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-    os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
-    os.makedirs(REPORT_FOLDER, exist_ok=True)
-except Exception as e:
-    print(f"Directory initialization notice: {e}")
+# Ensure target directories exist safely with fallback to /tmp
+for folder in [UPLOAD_FOLDER, os.path.dirname(DATABASE_PATH), REPORT_FOLDER]:
+    try:
+        os.makedirs(folder, exist_ok=True)
+    except Exception as e:
+        print(f"Directory creation notice for {folder}: {e}")

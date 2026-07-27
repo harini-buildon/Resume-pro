@@ -1,0 +1,19 @@
+# Vercel Deployment Ignore List
+venv/
+.venv/
+env/
+.git/
+.github/
+uploads/*
+!uploads/.gitkeep
+database/*.db
+static/reports/*
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+tests/
+sample/
+sample_jd.txt
+sample_resume.txt
