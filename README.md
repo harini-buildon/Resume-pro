@@ -25,6 +25,29 @@ An enterprise-grade, AI-driven career optimization platform built with **Python*
 
 ---
 
+## 📸 Screenshots
+
+### 🏠 Landing Page
+> Modern dark-themed hero section with feature highlights and step-by-step workflow.
+
+![Landing Page](screenshots/landing_preview.png)
+
+---
+
+### 📤 Upload Resume
+> Drag-and-drop upload interface supporting PDF & DOCX formats.
+
+![Upload Page](screenshots/upload_preview.png)
+
+---
+
+### 📊 Analysis Dashboard
+> Comprehensive ATS score breakdown, skills analysis, role recommendations, and improvement suggestions.
+
+![Dashboard](screenshots/dashboard_preview.png)
+
+---
+
 ## 🌟 Key Features
 
 1. **Smart Resume Parser**:
