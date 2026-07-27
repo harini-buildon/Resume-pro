@@ -3,7 +3,8 @@
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![Flask](https://img.shields.io/badge/Flask-3.1.1-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com)
 [![spaCy](https://img.shields.io/badge/spaCy-NLP-09A3D5?style=for-the-badge&logo=spacy&logoColor=white)](https://spacy.io)
-[![Localhost](https://img.shields.io/badge/Localhost-http%3A%2F%2F127.0.0.1%3A5000-success?style=for-the-badge&logo=gunicorn&logoColor=white)](http://127.0.0.1:5000)
+[![Vercel](https://img.shields.io/badge/Live_Demo-resume--pro--one.vercel.app-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://resume-pro-one.vercel.app/)
+[![Localhost](https://img.shields.io/badge/Localhost-127.0.0.1%3A5000-success?style=for-the-badge&logo=gunicorn&logoColor=white)](http://127.0.0.1:5000)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 
 An enterprise-grade, AI-driven career optimization platform built with **Python**, **Flask**, **spaCy NLP**, **Scikit-learn**, **SQLite**, **PostgreSQL**, **Redis**, and a clean responsive UI.
@@ -14,6 +15,7 @@ An enterprise-grade, AI-driven career optimization platform built with **Python*
 
 | Server | URL / Access | Status |
 |---|---|---|
+| 🌍 **Live Demo (Vercel)** | **[https://resume-pro-one.vercel.app](https://resume-pro-one.vercel.app/)** | **✅ Deployed** |
 | 💻 **Local Host Server** | **[http://127.0.0.1:5000](http://127.0.0.1:5000)** | **Active (Gunicorn / Flask)** |
 
 ### 🛡️ Key Features & Protections Active
