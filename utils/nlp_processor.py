@@ -42,15 +42,8 @@ def get_spacy_nlp():
         try:
             _NLP_MODEL = spacy.load("en_core_web_sm")
         except Exception:
-            try:
-                import subprocess, sys
-                subprocess.run(
-                    [sys.executable, "-m", "spacy", "download", "en_core_web_sm"],
-                    check=True
-                )
-                _NLP_MODEL = spacy.load("en_core_web_sm")
-            except Exception:
-                _NLP_MODEL = None
+            # Fall back to pure-Python regex NLP processor on serverless runtimes
+            _NLP_MODEL = None
     return _NLP_MODEL
 
 

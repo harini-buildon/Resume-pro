@@ -77,7 +77,11 @@ app.config['SESSION_COOKIE_HTTPONLY'] = SESSION_COOKIE_HTTPONLY
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 # Initialize SQLite DB and Cache spaCy model at app startup (if installed)
-init_db()
+try:
+    init_db()
+except Exception as e:
+    print(f"Warning: Could not initialize DB at startup: {e}")
+
 try:
     nlp_model = get_spacy_nlp()
     if nlp_model is not None:

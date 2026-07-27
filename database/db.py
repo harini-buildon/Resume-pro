@@ -87,8 +87,11 @@ def get_db_connection():
         os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
         _sqlite_local.conn = sqlite3.connect(DATABASE_PATH, check_same_thread=False)
         _sqlite_local.conn.row_factory = sqlite3.Row
-        _sqlite_local.conn.execute('PRAGMA journal_mode=WAL')  # WAL mode allows concurrent reads
-        _sqlite_local.conn.execute('PRAGMA busy_timeout=5000')  # Wait 5s before "db locked" error
+        try:
+            _sqlite_local.conn.execute('PRAGMA journal_mode=WAL')
+            _sqlite_local.conn.execute('PRAGMA busy_timeout=5000')
+        except Exception:
+            pass
     return _sqlite_local.conn
 
 
