@@ -3,23 +3,6 @@ utils/report_generator.py – Professional PDF Report Generation
 ================================================================
 This module generates a downloadable PDF report summarizing the
 complete resume analysis using the FPDF2 library.
-
-KEY CONCEPTS FOR BEGINNERS:
-──────────────────────────
-FPDF (Free PDF):
-- A lightweight library to create PDFs from scratch in Python
-- You "draw" content on the page using coordinates and fonts
-- The page is measured in millimeters by default
-- Origin (0,0) is at the top-left corner
-
-The report includes:
-1. Header with title and date
-2. Candidate information summary
-3. ATS score with breakdown
-4. Skills analysis (matched and missing)
-5. Resume improvement suggestions
-6. Job role recommendations
-7. Course recommendations
 """
 
 import os
@@ -31,9 +14,6 @@ from config import REPORT_FOLDER
 class ResumeReport(FPDF):
     """
     Custom PDF class extending FPDF with our header and footer.
-    
-    By overriding header() and footer(), these methods are automatically
-    called on every page of the PDF.
     """
     
     def header(self):
@@ -84,7 +64,7 @@ class ResumeReport(FPDF):
         self.set_font('Helvetica', 'B', 10)
         self.set_text_color(55, 65, 81)
         safe_key = sanitize_text(key)
-        safe_val = sanitize_text(str(value))
+        safe_val = sanitize_text(value)
         self.set_x(self.l_margin)
         self.cell(40, 6, f'{safe_key}:', new_x="END")
         self.set_font('Helvetica', '', 10)
@@ -135,8 +115,11 @@ def sanitize_text(text):
     Replace Unicode characters that FPDF can't render with ASCII equivalents.
     FPDF's built-in fonts (Helvetica, etc.) only support latin-1 characters.
     """
-    if not text:
+    if text is None:
         return ''
+    if not isinstance(text, str):
+        text = str(text)
+        
     replacements = {
         '\u2713': '[OK]',    # ✓
         '\u2714': '[OK]',    # ✔
@@ -167,7 +150,6 @@ def sanitize_text(text):
         '\u2610': '[ ]',     # ☐
         '\u2612': '[x]',     # ☒
         '\u00e9': 'e',       # é
-        '\u2019': "'",       # right single quote
         '\u00b7': '-',       # ·
         '\u00d7': 'x',       # ×
         '\u00f7': '/',       # ÷
@@ -180,6 +162,7 @@ def sanitize_text(text):
     }
     for old, new in replacements.items():
         text = text.replace(old, new)
+
     # Remove remaining emoji/unicode block characters as a fallback
     cleaned = ''
     for ch in text:
@@ -202,19 +185,14 @@ def sanitize_text(text):
 def generate_report(parsed_data, ats_result, suggestions, job_recommendations,
                     course_recommendations, job_match=None):
     """
-    Generate a complete PDF report of the resume analysis.
-    
-    Parameters:
-        parsed_data (dict): Parsed resume data
-        ats_result (dict): ATS score and breakdown
-        suggestions (list): Improvement suggestions
-        job_recommendations (list): Recommended job roles
-        course_recommendations (list): Recommended courses
-        job_match (dict): Optional job matching results
-    
-    Returns:
-        str: Path to the generated PDF file
+    Generate a complete PDF report of the resume analysis without runtime errors.
     """
+    parsed_data = parsed_data or {}
+    ats_result = ats_result or {}
+    suggestions = suggestions or []
+    job_recommendations = job_recommendations or []
+    course_recommendations = course_recommendations or []
+
     # Ensure the reports directory exists
     os.makedirs(REPORT_FOLDER, exist_ok=True)
     
@@ -243,7 +221,7 @@ def generate_report(parsed_data, ats_result, suggestions, job_recommendations,
     # ── Section 2: ATS Score ──
     pdf.section_title('2. ATS Compatibility Score')
     
-    total_score = ats_result.get('total_score', 0)
+    total_score = int(ats_result.get('total_score', 0))
     pdf.set_font('Helvetica', 'B', 24)
     
     # Color based on score
@@ -264,12 +242,13 @@ def generate_report(parsed_data, ats_result, suggestions, job_recommendations,
     pdf.ln(1)
     
     breakdown = ats_result.get('breakdown', {})
-    for key, data in breakdown.items():
-        if isinstance(data, dict):
-            label = data.get('label', key)
-            score = data.get('score', 0)
-            max_score = data.get('max', 0)
-            pdf.bullet_point(f'{label}: {score}/{max_score}')
+    if isinstance(breakdown, dict):
+        for key, data in breakdown.items():
+            if isinstance(data, dict):
+                label = data.get('label', key)
+                score = data.get('score', 0)
+                max_score = data.get('max', 0)
+                pdf.bullet_point(f'{label}: {score}/{max_score}')
     
     pdf.ln(3)
     
@@ -277,6 +256,8 @@ def generate_report(parsed_data, ats_result, suggestions, job_recommendations,
     pdf.section_title('3. Skills Analysis')
     
     skills = parsed_data.get('skills', [])
+    if isinstance(skills, str):
+        skills = [skills]
     pdf.body_text(f'Total skills identified: {len(skills)}')
     
     if skills:
@@ -286,11 +267,11 @@ def generate_report(parsed_data, ats_result, suggestions, job_recommendations,
         pdf.ln(1)
         
         # Display skills as comma-separated list
-        skills_text = ', '.join(skills)
+        skills_text = ', '.join([str(s) for s in skills])
         pdf.body_text(skills_text)
     
     # Job match skills (if provided)
-    if job_match:
+    if job_match and isinstance(job_match, dict):
         matched = job_match.get('matched_skills', [])
         missing = job_match.get('missing_skills', [])
         match_pct = job_match.get('match_percentage', 0)
@@ -302,13 +283,13 @@ def generate_report(parsed_data, ats_result, suggestions, job_recommendations,
             pdf.set_font('Helvetica', 'B', 10)
             pdf.set_text_color(6, 95, 70)
             pdf.cell(0, 6, 'Matched Skills:', new_x="LMARGIN", new_y="NEXT")
-            pdf.body_text(', '.join(matched))
+            pdf.body_text(', '.join([str(m) for m in matched]))
         
         if missing:
             pdf.set_font('Helvetica', 'B', 10)
             pdf.set_text_color(153, 27, 27)
             pdf.cell(0, 6, 'Missing Skills:', new_x="LMARGIN", new_y="NEXT")
-            pdf.body_text(', '.join(missing))
+            pdf.body_text(', '.join([str(m) for m in missing]))
     
     pdf.ln(3)
     
@@ -316,17 +297,20 @@ def generate_report(parsed_data, ats_result, suggestions, job_recommendations,
     pdf.section_title('4. Resume Improvement Suggestions')
     
     for suggestion in suggestions:
-        priority = suggestion.get('priority', 'nice-to-have')
-        # Replace emoji icon with text label for PDF
-        priority_labels = {
-            'critical': '[CRITICAL]',
-            'important': '[IMPORTANT]',
-            'nice-to-have': '[TIP]'
-        }
-        label = priority_labels.get(priority, '[TIP]')
-        message = suggestion.get('message', '')
-        category = suggestion.get('category', '')
-        pdf.bullet_point(f'{label} [{category}] {message}')
+        if isinstance(suggestion, str):
+            pdf.bullet_point(f'[TIP] {suggestion}')
+            continue
+        if isinstance(suggestion, dict):
+            priority = suggestion.get('priority', 'nice-to-have')
+            priority_labels = {
+                'critical': '[CRITICAL]',
+                'important': '[IMPORTANT]',
+                'nice-to-have': '[TIP]'
+            }
+            label = priority_labels.get(priority, '[TIP]')
+            message = suggestion.get('message', '')
+            category = suggestion.get('category', '')
+            pdf.bullet_point(f'{label} [{category}] {message}')
     
     pdf.ln(3)
     
@@ -335,13 +319,16 @@ def generate_report(parsed_data, ats_result, suggestions, job_recommendations,
     
     if job_recommendations:
         for rec in job_recommendations:
-            role = rec.get('role', '')
-            fit = rec.get('fit_percentage', 0)
-            desc = rec.get('description', '')
-            pdf.set_font('Helvetica', 'B', 10)
-            pdf.set_text_color(30, 58, 138)
-            pdf.cell(0, 6, f'{role} (Fit: {fit}%)', new_x="LMARGIN", new_y="NEXT")
-            pdf.body_text(desc)
+            if isinstance(rec, dict):
+                role = rec.get('role', '')
+                fit = rec.get('fit_percentage', 0)
+                desc = rec.get('description', '')
+                pdf.set_font('Helvetica', 'B', 10)
+                pdf.set_text_color(30, 58, 138)
+                pdf.cell(0, 6, f'{role} (Fit: {fit}%)', new_x="LMARGIN", new_y="NEXT")
+                pdf.body_text(desc)
+            elif isinstance(rec, str):
+                pdf.body_text(rec)
     else:
         pdf.body_text('No strong job role matches found. Consider adding more skills to your resume.')
     
@@ -351,23 +338,26 @@ def generate_report(parsed_data, ats_result, suggestions, job_recommendations,
     pdf.section_title('6. Recommended Learning Topics')
     
     if course_recommendations:
-        for course in course_recommendations[:8]:  # Limit to 8 courses
-            skill = course.get('skill', '')
-            topic = course.get('topic', '')
-            desc = course.get('description', '')
-            platforms = course.get('platforms', '')
-            
-            pdf.set_font('Helvetica', 'B', 10)
-            pdf.set_text_color(55, 65, 81)
-            pdf.cell(0, 6, f'{topic} ({skill})', new_x="LMARGIN", new_y="NEXT")
-            pdf.body_text(desc)
-            pdf.body_text(f'Where to learn: {platforms}')
-            pdf.ln(1)
+        for course in course_recommendations[:8]:
+            if isinstance(course, dict):
+                skill = course.get('skill', '')
+                topic = course.get('topic', '')
+                desc = course.get('description', '')
+                platforms = course.get('platforms', '')
+                
+                pdf.set_font('Helvetica', 'B', 10)
+                pdf.set_text_color(55, 65, 81)
+                pdf.cell(0, 6, f'{topic} ({skill})', new_x="LMARGIN", new_y="NEXT")
+                pdf.body_text(desc)
+                pdf.body_text(f'Where to learn: {platforms}')
+                pdf.ln(1)
+            elif isinstance(course, str):
+                pdf.body_text(course)
     else:
         pdf.body_text('Great job! No critical skills gaps identified.')
     
     # ── Save the PDF ──
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
     filename = f'resume_analysis_{timestamp}.pdf'
     filepath = os.path.join(REPORT_FOLDER, filename)
     

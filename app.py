@@ -252,7 +252,7 @@ def upload():
                 'id': resume_id,
                 'filename': filename,
                 'filepath': filepath,
-                'raw_text': raw_text,
+                'raw_text': raw_text[:2000],
                 'parsed_data': parsed_data
             }
             

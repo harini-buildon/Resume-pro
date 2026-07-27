@@ -1,19 +1,19 @@
 {% extends "base.html" %}
 
-{% block title %}Error - ResumeAI{% endblock %}
+{% block title %}Error - Resume Pro{% endblock %}
 
 {% block content %}
 <section class="error-section py-5">
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-lg-6 text-center">
-                <div class="error-card animate-fade-in">
-                    <div class="error-icon">
-                        <i class="bi bi-exclamation-triangle"></i>
+                <div class="error-card p-5 bg-white rounded-4 border shadow-sm animate-fade-in">
+                    <div class="error-icon text-danger mb-3">
+                        <i class="bi bi-exclamation-triangle display-3"></i>
                     </div>
-                    <h2 class="error-title">{{ error_title | default('Oops! Something went wrong') }}</h2>
-                    <p class="error-message">{{ error_message | default('An unexpected error occurred. Please try again.') }}</p>
-                    <div class="mt-4">
+                    <h2 class="error-title fw-bold text-dark mb-2">{{ error_title | default('Oops! Something went wrong') }}</h2>
+                    <p class="error-message text-muted mb-4">{{ error_message | default('An unexpected error occurred. Please try again.') }}</p>
+                    <div class="d-flex justify-content-center gap-3">
                         <a href="{{ url_for('home') }}" class="btn btn-primary me-2">
                             <i class="bi bi-house me-1"></i> Go Home
                         </a>

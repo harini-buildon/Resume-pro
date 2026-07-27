@@ -1,32 +1,10 @@
-﻿/**
+/**
  * static/js/dashboard-3d.js
- * Interactive 3-D mouse-tilt effect for dashboard cards.
+ * Dashboard visual animation script (score count-up and progress bars).
  */
 document.addEventListener('DOMContentLoaded', () => {
 
-  /* ── Mouse-tracking 3-D card tilt ── */
-  const TILT_MAX = 10; // degrees
-
-  document.querySelectorAll('.glass-card').forEach(card => {
-    card.addEventListener('mousemove', e => {
-      const rect = card.getBoundingClientRect();
-      const cx   = rect.left + rect.width  / 2;
-      const cy   = rect.top  + rect.height / 2;
-      const dx   = (e.clientX - cx) / (rect.width  / 2);
-      const dy   = (e.clientY - cy) / (rect.height / 2);
-      const rx   =  dy * TILT_MAX;   // rotateX (vertical mouse)
-      const ry   = -dx * TILT_MAX;   // rotateY (horizontal mouse)
-      card.style.transform = `perspective(800px) rotateX(${rx}deg) rotateY(${ry}deg) translateY(-6px) scale(1.02)`;
-      card.style.boxShadow = `${ry * 2}px ${-rx * 2}px 40px rgba(30,58,138,.22)`;
-    });
-
-    card.addEventListener('mouseleave', () => {
-      card.style.transform = '';
-      card.style.boxShadow = '';
-    });
-  });
-
-  /* ── Floating counter animation ── */
+  /* ── Stat counter animation ── */
   document.querySelectorAll('.stat-value-sm').forEach(el => {
     const target = parseInt(el.textContent, 10);
     if (isNaN(target) || target === 0) return;
@@ -39,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 40);
   });
 
-  /* ── Animate ATS number count-up ── */
+  /* ── Animate ATS score count-up ── */
   const scoreEl = document.getElementById('ats-score-number');
   if (scoreEl) {
     const final = parseInt(scoreEl.textContent, 10);
@@ -54,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* ── Progress bars animate on scroll ── */
   const bars = document.querySelectorAll('.breakdown-progress .progress-bar');
-  if ('IntersectionObserver' in window) {
+  if ('IntersectionObserver' in window && bars.length > 0) {
     const obs = new IntersectionObserver(entries => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {

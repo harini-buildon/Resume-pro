@@ -9,65 +9,67 @@
             <div class="col-lg-7">
                 <!-- Page Header -->
                 <div class="text-center mb-4 animate-fade-in">
-                    <h1 class="page-title">
+                    <h1 class="page-title fw-bold text-primary">
                         <i class="bi bi-cloud-upload me-2"></i>Upload Your Resume
                     </h1>
-                    <p class="page-subtitle">
+                    <p class="page-subtitle text-muted">
                         Upload your resume in PDF or DOCX format to get started with the analysis.
                     </p>
                 </div>
                 
                 <!-- Upload Card -->
-                <div class="upload-card animate-slide-up">
+                <div class="upload-card card p-4 p-md-5 rounded-4 shadow-sm border animate-slide-up">
                     <form action="{{ url_for('upload') }}" method="POST" enctype="multipart/form-data" id="upload-form">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         
                         <!-- Drag & Drop Zone -->
-                        <div class="drop-zone" id="drop-zone">
-                            <div class="drop-zone-content">
-                                <div class="drop-icon">
+                        <div class="drop-zone p-4 text-center rounded-4 border-2 border-dashed bg-light mb-3" id="drop-zone" style="cursor: pointer; position: relative;">
+                            <div class="drop-zone-content" id="drop-zone-content">
+                                <div class="drop-icon text-primary display-4 mb-2">
                                     <i class="bi bi-cloud-arrow-up"></i>
                                 </div>
-                                <h5 class="drop-title">Drag & Drop your resume here</h5>
-                                <p class="drop-subtitle">or click to browse files</p>
-                                <div class="drop-formats">
-                                    <span class="format-badge"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</span>
-                                    <span class="format-badge"><i class="bi bi-file-earmark-word me-1"></i>DOCX</span>
+                                <h5 class="drop-title fw-bold text-dark mb-1">Drag & Drop your resume here</h5>
+                                <p class="drop-subtitle text-muted small mb-3">or click to browse files</p>
+                                <div class="drop-formats d-flex justify-content-center gap-2">
+                                    <span class="badge bg-secondary-subtle text-secondary px-3 py-2 rounded-pill"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</span>
+                                    <span class="badge bg-secondary-subtle text-secondary px-3 py-2 rounded-pill"><i class="bi bi-file-earmark-word me-1"></i>DOCX</span>
                                 </div>
                                 <input type="file" name="resume" id="resume-file" 
-                                       accept=".pdf,.docx" class="drop-input" required>
+                                       accept=".pdf,.docx" class="drop-input position-absolute opacity-0 w-100 h-100 top-0 start-0" style="cursor: pointer;" required>
                             </div>
                             
                             <!-- File Selected State -->
-                            <div class="file-selected d-none" id="file-selected">
-                                <i class="bi bi-file-earmark-check file-selected-icon"></i>
-                                <span class="file-selected-name" id="file-name"></span>
-                                <span class="file-selected-size" id="file-size"></span>
-                                <button type="button" class="btn btn-sm btn-outline-danger ms-2" id="remove-file">
+                            <div class="file-selected d-none p-3 rounded-3 bg-primary-subtle text-primary border border-primary-subtle align-items-center justify-content-center gap-3" id="file-selected">
+                                <i class="bi bi-file-earmark-check fs-3 text-primary"></i>
+                                <div class="text-start">
+                                    <h6 class="file-selected-name mb-0 fw-bold" id="file-name"></h6>
+                                    <small class="file-selected-size text-muted" id="file-size"></small>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger rounded-circle p-1 ms-3" id="remove-file">
                                     <i class="bi bi-x-lg"></i>
                                 </button>
                             </div>
                         </div>
                         
                         <!-- Upload Guidelines -->
-                        <div class="upload-guidelines mt-3">
-                            <div class="guideline-item">
+                        <div class="upload-guidelines mt-3 text-muted small">
+                            <div class="guideline-item mb-1">
                                 <i class="bi bi-check-circle text-success me-2"></i>
                                 Supported formats: PDF, DOCX
                             </div>
-                            <div class="guideline-item">
+                            <div class="guideline-item mb-1">
                                 <i class="bi bi-check-circle text-success me-2"></i>
-                                File size: 50 KB – 16 MB
+                                File size limit: Up to 16 MB
                             </div>
-                            <div class="guideline-item">
+                            <div class="guideline-item mb-1">
                                 <i class="bi bi-check-circle text-success me-2"></i>
-                                Text-based resumes work best (not scanned images)
+                                Text-based resumes work best
                             </div>
                         </div>
                         
                         <!-- Submit Button -->
                         <div class="text-center mt-4">
-                            <button type="submit" class="btn btn-primary btn-lg upload-submit-btn" id="upload-btn" disabled>
+                            <button type="submit" class="btn btn-primary btn-lg w-100 hero-btn" id="upload-btn" disabled>
                                 <i class="bi bi-upload me-2"></i>
                                 <span id="btn-text">Upload & Extract Text</span>
                                 <span class="spinner-border spinner-border-sm d-none" id="btn-spinner"></span>

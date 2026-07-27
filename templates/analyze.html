@@ -9,32 +9,32 @@
             <div class="col-lg-8">
                 <!-- Page Header -->
                 <div class="text-center mb-4 animate-fade-in">
-                    <h1 class="page-title">
+                    <h1 class="page-title fw-bold text-primary">
                         <i class="bi bi-search me-2"></i>Job Description Analysis
                     </h1>
-                    <p class="page-subtitle">
+                    <p class="page-subtitle text-muted">
                         Paste a job description to compare your resume skills against the job requirements.
                         You can also skip this step for a general analysis.
                     </p>
                 </div>
                 
                 <!-- Analysis Form Card -->
-                <div class="glass-card animate-slide-up">
+                <div class="glass-card p-4 animate-slide-up">
                     <form action="{{ url_for('analyze', resume_id=resume_id) }}" method="POST" id="analyze-form">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <div class="card-body-custom">
                             <!-- Job Description Input -->
                             <div class="mb-4">
-                                <label for="job-description" class="form-label fw-semibold">
-                                    <i class="bi bi-clipboard-data me-1"></i> Job Description
+                                <label for="job-description" class="form-label fw-semibold text-dark">
+                                    <i class="bi bi-clipboard-data me-1 text-primary"></i> Job Description
                                 </label>
                                 <textarea class="form-control job-textarea" id="job-description" 
-                                          name="job_description" rows="12"
+                                          name="job_description" rows="11"
                                           placeholder="Paste the complete job description here...
 
 Example:
 We are looking for a Data Scientist with experience in Python, Machine Learning, SQL, and TensorFlow. The candidate should have knowledge of Deep Learning, NLP, and data visualization tools like Tableau or Power BI..."></textarea>
-                                <div class="form-text mt-2">
+                                <div class="form-text mt-2 text-muted">
                                     <i class="bi bi-info-circle me-1"></i>
                                     Tip: Copy the entire job posting for the most accurate skill comparison.
                                 </div>
@@ -51,7 +51,7 @@ We are looking for a Data Scientist with experience in Python, Machine Learning,
                                         <i class="bi bi-cloud-download me-1"></i> Extract JD Text
                                     </button>
                                 </div>
-                                <div class="form-text small" id="url-fetch-msg">Paste a link to any job posting to auto-extract its description.</div>
+                                <div class="form-text small text-muted" id="url-fetch-msg">Paste a link to any job posting to auto-extract its description.</div>
                             </div>
 
                             <!-- Sample JD Helper -->
@@ -95,11 +95,11 @@ We are looking for a Data Scientist with experience in Python, Machine Learning,
                             
                             <!-- Action Buttons -->
                             <div class="d-flex justify-content-center gap-3">
-                                <button type="submit" class="btn btn-primary btn-lg hero-btn">
+                                <button type="submit" class="btn btn-primary btn-lg hero-btn px-4">
                                     <i class="bi bi-bar-chart-line me-2"></i> Analyze & Compare
                                 </button>
                                 <a href="{{ url_for('dashboard', resume_id=resume_id) }}" 
-                                   class="btn btn-outline-secondary btn-lg">
+                                   class="btn btn-outline-secondary btn-lg px-4">
                                     <i class="bi bi-skip-forward me-2"></i> Skip – General Analysis
                                 </a>
                             </div>
@@ -110,24 +110,24 @@ We are looking for a Data Scientist with experience in Python, Machine Learning,
                 <!-- Info Cards -->
                 <div class="row g-3 mt-4">
                     <div class="col-md-4">
-                        <div class="info-card animate-fade-in">
-                            <i class="bi bi-diagram-3 text-primary"></i>
-                            <h6>TF-IDF Analysis</h6>
-                            <small>Advanced text comparison using ML</small>
+                        <div class="info-card p-3 rounded border bg-white text-center animate-fade-in">
+                            <i class="bi bi-diagram-3 text-primary fs-3 d-block mb-1"></i>
+                            <h6 class="fw-bold mb-0">TF-IDF Analysis</h6>
+                            <small class="text-muted">Advanced text comparison using ML</small>
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="info-card animate-fade-in">
-                            <i class="bi bi-intersect text-success"></i>
-                            <h6>Skill Matching</h6>
-                            <small>Identify matched & missing skills</small>
+                        <div class="info-card p-3 rounded border bg-white text-center animate-fade-in">
+                            <i class="bi bi-intersect text-success fs-3 d-block mb-1"></i>
+                            <h6 class="fw-bold mb-0">Skill Matching</h6>
+                            <small class="text-muted">Identify matched & missing skills</small>
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="info-card animate-fade-in">
-                            <i class="bi bi-percent text-warning"></i>
-                            <h6>Match Score</h6>
-                            <small>Get your compatibility percentage</small>
+                        <div class="info-card p-3 rounded border bg-white text-center animate-fade-in">
+                            <i class="bi bi-percent text-warning fs-3 d-block mb-1"></i>
+                            <h6 class="fw-bold mb-0">Match Score</h6>
+                            <small class="text-muted">Get your compatibility percentage</small>
                         </div>
                     </div>
                 </div>

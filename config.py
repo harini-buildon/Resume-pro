@@ -50,7 +50,7 @@ else:
 
 
 ALLOWED_EXTENSIONS = {'pdf', 'docx'}
-MIN_CONTENT_LENGTH = 50 * 1024         # 50 KB minimum upload size
+MIN_CONTENT_LENGTH = 50              # 50 bytes minimum upload size (prevents empty files)
 MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB maximum upload size
 
 # Ensure target directories exist safely

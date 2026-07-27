@@ -29,7 +29,7 @@
         <div class="row justify-content-center">
             <div class="col-lg-9">
                 <div class="glass-card animate-slide-up p-4 p-md-5 shadow-lg border">
-                    <div class="p-4 bg-white rounded-3 border font-monospace text-dark" id="cover-letter-content" style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.7;">
+                    <div class="p-4 bg-white rounded-3 border text-dark" id="cover-letter-content" style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.7; font-family: 'Inter', sans-serif;">
 {{ cover_letter.cover_letter_text }}
                     </div>
                 </div>
@@ -71,7 +71,7 @@ function copyCoverLetter() {
     if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(text).then(showSuccess).catch(showError);
     } else {
-        // Fallback for HTTP (non-HTTPS) environments
+        // Fallback for HTTP environments
         try {
             const ta = document.createElement('textarea');
             ta.value = text;

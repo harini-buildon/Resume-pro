@@ -9,10 +9,10 @@
             <div class="col-lg-9">
                 <!-- Page Header -->
                 <div class="text-center mb-4 animate-fade-in">
-                    <h1 class="page-title">
+                    <h1 class="page-title fw-bold text-primary">
                         <i class="bi bi-file-text me-2"></i>Extracted Resume Text
                     </h1>
-                    <p class="page-subtitle">
+                    <p class="page-subtitle text-muted">
                         Here is the text extracted from <strong>{{ filename }}</strong>. 
                         Review it before proceeding to analysis.
                     </p>
@@ -22,26 +22,26 @@
                 <div class="glass-card animate-slide-up">
                     <div class="card-header-custom d-flex justify-content-between align-items-center">
                         <div>
-                            <i class="bi bi-file-earmark-text me-2"></i>
+                            <i class="bi bi-file-earmark-text me-2 text-primary"></i>
                             <strong>{{ filename }}</strong>
                         </div>
                         <span class="badge bg-primary-subtle text-primary">
                             {{ text | length }} characters
                         </span>
                     </div>
-                    <div class="card-body-custom">
-                        <pre class="extracted-text-content">{{ text }}</pre>
+                    <div class="card-body-custom p-4">
+                        <pre class="extracted-text-content p-3 bg-light rounded border text-dark" style="max-height: 350px; overflow-y: auto; white-space: pre-wrap; font-family: monospace; font-size: 0.9rem;">{{ text }}</pre>
                     </div>
                 </div>
                 
                 <!-- Parsed Information Preview -->
                 {% if parsed_data %}
-                <div class="glass-card mt-4 animate-slide-up">
-                    <div class="card-header-custom">
-                        <i class="bi bi-person-badge me-2"></i>
-                        <strong>Quick Preview – Parsed Information</strong>
+                <div class="glass-card mt-4 p-4 animate-slide-up">
+                    <div class="card-header-custom bg-transparent border-0 p-0 mb-3">
+                        <i class="bi bi-person-badge me-2 text-primary"></i>
+                        <strong class="fs-5 text-dark">Quick Preview – Parsed Information</strong>
                     </div>
-                    <div class="card-body-custom">
+                    <div>
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <div class="info-item">
@@ -71,10 +71,10 @@
                         
                         {% if parsed_data.get('skills') %}
                         <div class="mt-3">
-                            <strong><i class="bi bi-gear me-1"></i> Detected Skills:</strong>
-                            <div class="mt-2">
+                            <strong class="text-dark small"><i class="bi bi-gear me-1"></i> Detected Skills:</strong>
+                            <div class="mt-2 d-flex flex-wrap gap-1">
                                 {% for skill in parsed_data.get('skills', []) %}
-                                    <span class="badge skill-badge me-1 mb-1">{{ skill }}</span>
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">{{ skill }}</span>
                                 {% endfor %}
                             </div>
                         </div>
@@ -85,10 +85,10 @@
                 
                 <!-- Action Buttons -->
                 <div class="d-flex justify-content-center gap-3 mt-4 animate-fade-in">
-                    <a href="{{ url_for('analyze', resume_id=resume_id) }}" class="btn btn-primary btn-lg hero-btn">
+                    <a href="{{ url_for('analyze', resume_id=resume_id) }}" class="btn btn-primary btn-lg hero-btn px-4">
                         <i class="bi bi-search me-2"></i> Continue to Analysis
                     </a>
-                    <a href="{{ url_for('upload') }}" class="btn btn-outline-secondary btn-lg">
+                    <a href="{{ url_for('upload') }}" class="btn btn-outline-secondary btn-lg px-4">
                         <i class="bi bi-arrow-counterclockwise me-2"></i> Upload Different File
                     </a>
                 </div>

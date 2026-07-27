@@ -6,85 +6,94 @@
 <!-- ═══════════════════════════════════════════ -->
 <!-- Hero Section                                -->
 <!-- ═══════════════════════════════════════════ -->
-<section class="hero-section">
-    <div class="hero-bg-shapes">
-        <div class="shape shape-1"></div>
-        <div class="shape shape-2"></div>
-        <div class="shape shape-3"></div>
-    </div>
-    <div class="container">
+<section class="hero-section py-5 position-relative overflow-hidden" style="background-color: #1b365d; color: #ffffff;">
+    <div class="container py-3">
         <div class="row align-items-center min-vh-75">
-            <div class="col-lg-6 hero-content animate-slide-up">
-                <div class="hero-badge mb-3">
-                    <i class="bi bi-stars me-1"></i> AI-Powered Analysis
+            <!-- Left Hero Content -->
+            <div class="col-lg-6 hero-content animate-slide-up pe-lg-5">
+                <div class="hero-badge mb-4 d-inline-flex align-items-center gap-2" style="background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.22); padding: 0.45rem 1.2rem; border-radius: 50px; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: #ffffff;">
+                    <i class="bi bi-stars"></i> AI-POWERED ANALYSIS
                 </div>
-                <h1 class="hero-title">
+                
+                <h1 class="hero-title fw-extrabold mb-3" style="font-size: 3.4rem; font-weight: 800; line-height: 1.12; letter-spacing: -1.5px; color: #ffffff;">
                     Analyze Your Resume<br>
-                    <span class="hero-gradient-text">Like a Pro Recruiter</span>
+                    <span style="color: #60a5fa;">Like a Pro Recruiter</span>
                 </h1>
-                <p class="hero-subtitle">
-                    Upload your resume and get instant ATS scoring, skill gap analysis, 
-                    job recommendations, and actionable improvement suggestions — 
-                    all powered by machine learning.
+                
+                <p class="hero-subtitle text-white-50 fs-5 mb-4" style="line-height: 1.65; max-width: 530px; font-size: 1.1rem !important;">
+                    Upload your resume and get instant ATS scoring, skill gap analysis, job recommendations, and actionable improvement suggestions — all powered by machine learning.
                 </p>
-                <div class="hero-cta">
-                    <a href="{{ url_for('upload') }}" class="btn btn-primary btn-lg hero-btn me-3">
-                        <i class="bi bi-cloud-upload me-2"></i> Upload Resume
+                
+                <div class="hero-cta d-flex flex-wrap gap-3 mb-5">
+                    <a href="{{ url_for('upload') }}" class="btn btn-primary btn-lg px-4 py-3 fw-bold d-inline-flex align-items-center gap-2" style="background: #2563eb; border: none; border-radius: 12px; font-size: 1.05rem; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);">
+                        <i class="bi bi-cloud-upload fs-5"></i> Upload Resume
                     </a>
-                    <a href="#features" class="btn btn-outline-light btn-lg hero-btn-outline">
-                        <i class="bi bi-arrow-down me-2"></i> Learn More
+                    <a href="#features" class="btn btn-outline-light btn-lg px-4 py-3 fw-semibold d-inline-flex align-items-center gap-2" style="border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 12px; font-size: 1.05rem; background: transparent; color: #ffffff;">
+                        <i class="bi bi-arrow-down fs-5"></i> Learn More
                     </a>
                 </div>
-                <div class="hero-stats mt-4">
+                
+                <div class="hero-stats d-flex gap-5 pt-2 border-top border-white-10" style="border-top-color: rgba(255,255,255,0.1) !important;">
                     <div class="stat-item">
-                        <span class="stat-number">100+</span>
-                        <span class="stat-label">Skills Tracked</span>
+                        <span class="stat-number d-block fw-extrabold fs-2 text-white" style="font-weight: 800;">100+</span>
+                        <span class="stat-label text-white-50 small fw-medium">Skills Tracked</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-number">12</span>
-                        <span class="stat-label">Job Roles</span>
+                        <span class="stat-number d-block fw-extrabold fs-2 text-white" style="font-weight: 800;">12</span>
+                        <span class="stat-label text-white-50 small fw-medium">Job Roles</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-number">8</span>
-                        <span class="stat-label">ATS Criteria</span>
+                        <span class="stat-number d-block fw-extrabold fs-2 text-white" style="font-weight: 800;">8</span>
+                        <span class="stat-label text-white-50 small fw-medium">ATS Criteria</span>
                     </div>
                 </div>
             </div>
-            <div class="col-lg-6 hero-visual animate-slide-up-delay">
-                <div class="hero-card-stack">
-                    <div class="floating-card card-1">
-                        <i class="bi bi-check-circle-fill text-success"></i>
+
+            <!-- Right Hero Visual Graphic -->
+            <div class="col-lg-6 hero-visual animate-slide-up-delay mt-5 mt-lg-0 d-flex justify-content-center">
+                <div class="hero-card-stack position-relative" style="width: 360px; height: 440px;">
+                    
+                    <!-- Floating Badge 1: ATS Score -->
+                    <div class="floating-card card-1 position-absolute shadow-lg d-flex align-items-center gap-2" style="top: 25%; left: -35px; z-index: 10; background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 12px; padding: 0.65rem 1.2rem; color: #ffffff; font-size: 0.9rem;">
+                        <i class="bi bi-check-circle-fill text-success fs-5"></i>
                         <span>ATS Score: <strong>87/100</strong></span>
                     </div>
-                    <div class="floating-card card-2">
-                        <i class="bi bi-graph-up-arrow text-primary"></i>
-                        <span>Skills Match: <strong>92%</strong></span>
-                    </div>
-                    <div class="floating-card card-3">
-                        <i class="bi bi-briefcase-fill text-warning"></i>
+
+                    <!-- Floating Badge 2: Top Role -->
+                    <div class="floating-card card-2 position-absolute shadow-lg d-flex align-items-center gap-2" style="top: 52%; right: -30px; z-index: 10; background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 12px; padding: 0.65rem 1.2rem; color: #ffffff; font-size: 0.9rem;">
+                        <i class="bi bi-briefcase-fill text-warning fs-5"></i>
                         <span>Top Role: <strong>ML Engineer</strong></span>
                     </div>
-                    <div class="hero-resume-preview">
-                        <div class="resume-line resume-title-line"></div>
-                        <div class="resume-line resume-subtitle-line"></div>
-                        <div class="resume-line-group">
-                            <div class="resume-line short"></div>
-                            <div class="resume-line medium"></div>
-                            <div class="resume-line long"></div>
+
+                    <!-- Floating Badge 3: Skills Match -->
+                    <div class="floating-card card-3 position-absolute shadow-lg d-flex align-items-center gap-2" style="bottom: 12%; right: -20px; z-index: 10; background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 12px; padding: 0.65rem 1.2rem; color: #ffffff; font-size: 0.9rem;">
+                        <i class="bi bi-graph-up-arrow text-primary fs-5"></i>
+                        <span>Skills Match: <strong>92%</strong></span>
+                    </div>
+
+                    <!-- Main Document Preview Graphic -->
+                    <div class="hero-resume-preview rounded-4 p-4 d-flex flex-column justify-content-between h-100 w-100" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); backdrop-filter: blur(12px); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);">
+                        <div>
+                            <div class="resume-line title-line mb-3" style="height: 14px; width: 55%; background: rgba(255, 255, 255, 0.28); border-radius: 4px;"></div>
+                            <div class="resume-line sub-line mb-4" style="height: 8px; width: 35%; background: rgba(255, 255, 255, 0.15); border-radius: 4px;"></div>
+                            
+                            <div class="resume-line mb-2" style="height: 8px; width: 85%; background: rgba(255, 255, 255, 0.15); border-radius: 4px;"></div>
+                            <div class="resume-line mb-2" style="height: 8px; width: 95%; background: rgba(255, 255, 255, 0.15); border-radius: 4px;"></div>
+                            <div class="resume-line mb-4" style="height: 8px; width: 70%; background: rgba(255, 255, 255, 0.15); border-radius: 4px;"></div>
+
+                            <div class="resume-line mb-2" style="height: 8px; width: 90%; background: rgba(255, 255, 255, 0.15); border-radius: 4px;"></div>
+                            <div class="resume-line mb-2" style="height: 8px; width: 80%; background: rgba(255, 255, 255, 0.15); border-radius: 4px;"></div>
                         </div>
-                        <div class="resume-section-gap"></div>
-                        <div class="resume-line-group">
-                            <div class="resume-line medium"></div>
-                            <div class="resume-line long"></div>
-                            <div class="resume-line short"></div>
-                        </div>
-                        <div class="resume-badge-row">
-                            <span class="resume-badge">Python</span>
-                            <span class="resume-badge">ML</span>
-                            <span class="resume-badge">SQL</span>
-                            <span class="resume-badge">Flask</span>
+
+                        <!-- Skill Pills at Bottom of Document Graphic -->
+                        <div class="d-flex flex-wrap gap-2 pt-3 border-top border-white-10" style="border-top-color: rgba(255,255,255,0.1) !important;">
+                            <span class="badge px-3 py-2" style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.18); color: rgba(255, 255, 255, 0.85); font-weight: 500; font-size: 0.8rem;">Python</span>
+                            <span class="badge px-3 py-2" style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.18); color: rgba(255, 255, 255, 0.85); font-weight: 500; font-size: 0.8rem;">ML</span>
+                            <span class="badge px-3 py-2" style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.18); color: rgba(255, 255, 255, 0.85); font-weight: 500; font-size: 0.8rem;">SQL</span>
+                            <span class="badge px-3 py-2" style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.18); color: rgba(255, 255, 255, 0.85); font-weight: 500; font-size: 0.8rem;">Flask</span>
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>
@@ -97,52 +106,52 @@
 <section class="features-section py-5" id="features">
     <div class="container">
         <div class="text-center mb-5 animate-fade-in">
-            <h2 class="section-title">Powerful Features</h2>
-            <p class="section-subtitle">Everything you need to optimize your resume and land your dream job</p>
+            <h2 class="section-title fw-bold display-6">Powerful Features</h2>
+            <p class="section-subtitle text-muted fs-5">Everything you need to optimize your resume and land your dream job</p>
         </div>
         
         <div class="row g-4">
             <!-- Feature 1: Upload & Extract -->
             <div class="col-md-6 col-lg-3">
-                <div class="feature-card animate-fade-in">
-                    <div class="feature-icon-wrapper">
-                        <i class="bi bi-file-earmark-arrow-up feature-icon"></i>
+                <div class="feature-card p-4 h-100 animate-fade-in text-center rounded-4 border bg-white shadow-sm">
+                    <div class="feature-icon-wrapper mb-3 p-3 rounded-circle d-inline-block bg-primary-subtle text-primary">
+                        <i class="bi bi-file-earmark-arrow-up feature-icon fs-2"></i>
                     </div>
-                    <h5 class="feature-title">Smart Upload</h5>
-                    <p class="feature-desc">Upload PDF or DOCX resumes. Our AI extracts and parses all text automatically.</p>
+                    <h5 class="feature-title fw-bold">Smart Upload</h5>
+                    <p class="feature-desc text-muted small">Upload PDF or DOCX resumes. Our AI extracts and parses all text automatically.</p>
                 </div>
             </div>
             
             <!-- Feature 2: ATS Score -->
             <div class="col-md-6 col-lg-3">
-                <div class="feature-card animate-fade-in">
-                    <div class="feature-icon-wrapper icon-green">
-                        <i class="bi bi-speedometer2 feature-icon"></i>
+                <div class="feature-card p-4 h-100 animate-fade-in text-center rounded-4 border bg-white shadow-sm">
+                    <div class="feature-icon-wrapper icon-green mb-3 p-3 rounded-circle d-inline-block bg-success-subtle text-success">
+                        <i class="bi bi-speedometer2 feature-icon fs-2"></i>
                     </div>
-                    <h5 class="feature-title">ATS Scoring</h5>
-                    <p class="feature-desc">Get a detailed ATS compatibility score out of 100 with category-wise breakdown.</p>
+                    <h5 class="feature-title fw-bold">ATS Scoring</h5>
+                    <p class="feature-desc text-muted small">Get a detailed ATS compatibility score out of 100 with category-wise breakdown.</p>
                 </div>
             </div>
             
             <!-- Feature 3: Skill Analysis -->
             <div class="col-md-6 col-lg-3">
-                <div class="feature-card animate-fade-in">
-                    <div class="feature-icon-wrapper icon-purple">
-                        <i class="bi bi-bar-chart-line feature-icon"></i>
+                <div class="feature-card p-4 h-100 animate-fade-in text-center rounded-4 border bg-white shadow-sm">
+                    <div class="feature-icon-wrapper icon-purple mb-3 p-3 rounded-circle d-inline-block bg-indigo-subtle text-indigo" style="background: #e0e7ff; color: #4f46e5;">
+                        <i class="bi bi-bar-chart-line feature-icon fs-2"></i>
                     </div>
-                    <h5 class="feature-title">Skill Analysis</h5>
-                    <p class="feature-desc">Compare your skills against job descriptions using TF-IDF and Cosine Similarity.</p>
+                    <h5 class="feature-title fw-bold">Skill Analysis</h5>
+                    <p class="feature-desc text-muted small">Compare your skills against job descriptions using TF-IDF and Cosine Similarity.</p>
                 </div>
             </div>
             
             <!-- Feature 4: Recommendations -->
             <div class="col-md-6 col-lg-3">
-                <div class="feature-card animate-fade-in">
-                    <div class="feature-icon-wrapper icon-orange">
-                        <i class="bi bi-lightbulb feature-icon"></i>
+                <div class="feature-card p-4 h-100 animate-fade-in text-center rounded-4 border bg-white shadow-sm">
+                    <div class="feature-icon-wrapper icon-orange mb-3 p-3 rounded-circle d-inline-block bg-warning-subtle text-warning">
+                        <i class="bi bi-lightbulb feature-icon fs-2"></i>
                     </div>
-                    <h5 class="feature-title">Smart Suggestions</h5>
-                    <p class="feature-desc">Get personalized job role recommendations and improvement tips.</p>
+                    <h5 class="feature-title fw-bold">Smart Suggestions</h5>
+                    <p class="feature-desc text-muted small">Get personalized job role recommendations and improvement tips.</p>
                 </div>
             </div>
         </div>
@@ -155,36 +164,36 @@
 <section class="how-it-works-section py-5">
     <div class="container">
         <div class="text-center mb-5">
-            <h2 class="section-title">How It Works</h2>
-            <p class="section-subtitle">Three simple steps to a better resume</p>
+            <h2 class="section-title fw-bold display-6">How It Works</h2>
+            <p class="section-subtitle text-muted fs-5">Three simple steps to a better resume</p>
         </div>
         
         <div class="row g-4 align-items-center">
             <div class="col-md-4">
-                <div class="step-card text-center">
-                    <div class="step-number">1</div>
-                    <h5 class="step-title">Upload</h5>
-                    <p class="step-desc">Upload your resume in PDF or DOCX format</p>
+                <div class="step-card p-4 text-center h-100 bg-white rounded-4 border shadow-sm">
+                    <div class="step-number badge bg-primary rounded-circle fs-4 mb-3" style="width: 50px; height: 50px; line-height: 36px;">1</div>
+                    <h5 class="step-title fw-bold">Upload</h5>
+                    <p class="step-desc text-muted small">Upload your resume in PDF or DOCX format</p>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="step-card text-center">
-                    <div class="step-number">2</div>
-                    <h5 class="step-title">Analyze</h5>
-                    <p class="step-desc">Our AI parses, scores, and compares your resume</p>
+                <div class="step-card p-4 text-center h-100 bg-white rounded-4 border shadow-sm">
+                    <div class="step-number badge bg-primary rounded-circle fs-4 mb-3" style="width: 50px; height: 50px; line-height: 36px;">2</div>
+                    <h5 class="step-title fw-bold">Analyze</h5>
+                    <p class="step-desc text-muted small">Our AI parses, scores, and compares your resume</p>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="step-card text-center">
-                    <div class="step-number">3</div>
-                    <h5 class="step-title">Improve</h5>
-                    <p class="step-desc">Get actionable suggestions and download your report</p>
+                <div class="step-card p-4 text-center h-100 bg-white rounded-4 border shadow-sm">
+                    <div class="step-number badge bg-success rounded-circle fs-4 mb-3" style="width: 50px; height: 50px; line-height: 36px;">3</div>
+                    <h5 class="step-title fw-bold">Improve</h5>
+                    <p class="step-desc text-muted small">Get actionable suggestions and download your report</p>
                 </div>
             </div>
         </div>
         
         <div class="text-center mt-5">
-            <a href="{{ url_for('upload') }}" class="btn btn-primary btn-lg hero-btn">
+            <a href="{{ url_for('upload') }}" class="btn btn-primary btn-lg hero-btn px-5 py-3" style="background: #2563eb; border: none; border-radius: 12px;">
                 <i class="bi bi-rocket-takeoff me-2"></i> Get Started Now
             </a>
         </div>
