@@ -19,10 +19,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ──────────────────────────────────────────────
-# Base directory & Environment detection
+# Base directory
 # ──────────────────────────────────────────────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-IS_VERCEL = bool(os.environ.get('VERCEL')) or 'VERCEL' in os.environ
 
 # ──────────────────────────────────────────────
 # Flask Settings
@@ -35,19 +34,13 @@ SESSION_COOKIE_HTTPONLY = True # Prevent client-side JS from accessing cookies
 
 
 # ──────────────────────────────────────────────
-# File Upload & Database Settings (Writable /tmp on Vercel)
+# File Upload & Database Settings
 # ──────────────────────────────────────────────
 DATABASE_URL = os.environ.get('DATABASE_URL') or os.environ.get('POSTGRES_URL')
 
-if IS_VERCEL:
-    UPLOAD_FOLDER = '/tmp/uploads'
-    DATABASE_PATH = '/tmp/database/resume_analyzer.db'
-    REPORT_FOLDER = '/tmp/reports'
-else:
-    UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
-    DATABASE_PATH = os.path.join(BASE_DIR, 'database', 'resume_analyzer.db')
-    REPORT_FOLDER = os.path.join(BASE_DIR, 'static', 'reports')
-
+UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
+DATABASE_PATH = os.path.join(BASE_DIR, 'database', 'resume_analyzer.db')
+REPORT_FOLDER = os.path.join(BASE_DIR, 'static', 'reports')
 
 ALLOWED_EXTENSIONS = {'pdf', 'docx'}
 MIN_CONTENT_LENGTH = 50              # 50 bytes minimum upload size (prevents empty files)
