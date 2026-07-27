@@ -3,7 +3,6 @@
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![Flask](https://img.shields.io/badge/Flask-3.1.1-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com)
 [![spaCy](https://img.shields.io/badge/spaCy-NLP-09A3D5?style=for-the-badge&logo=spacy&logoColor=white)](https://spacy.io)
-[![Vercel Live Demo](https://img.shields.io/badge/Vercel-Live%20Application-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://resume-pro-blue.vercel.app/)
 [![Localhost](https://img.shields.io/badge/Localhost-http%3A%2F%2F127.0.0.1%3A5000-success?style=for-the-badge&logo=gunicorn&logoColor=white)](http://127.0.0.1:5000)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 
@@ -11,11 +10,10 @@ An enterprise-grade, AI-driven career optimization platform built with **Python*
 
 ---
 
-## 🌐 Application Deployment Links
+## 🌐 Application Access
 
-| Deployment | URL / Access | Status |
+| Server | URL / Access | Status |
 |---|---|---|
-| ⚡ **Live Vercel Application** | **[https://resume-pro-blue.vercel.app/](https://resume-pro-blue.vercel.app/)** | **Active (Serverless)** |
 | 💻 **Local Host Server** | **[http://127.0.0.1:5000](http://127.0.0.1:5000)** | **Active (Gunicorn / Flask)** |
 
 ### 🛡️ Key Features & Protections Active
@@ -56,12 +54,8 @@ An enterprise-grade, AI-driven career optimization platform built with **Python*
 ```
 resume-analyzer/
 ├── app.py                    # Flask server, routing, rate limiting & error handlers
-├── config.py                 # Configuration settings (SECRET_KEY, Vercel /tmp detection)
-├── vercel.json               # Vercel deployment routing (api/index.py, maxDuration: 60)
-├── .vercelignore             # Vercel deployment ignore rules
+├── config.py                 # Configuration settings (SECRET_KEY, storage folders)
 ├── Procfile                  # Production Gunicorn WSGI startup configuration
-├── api/
-│   └── index.py              # Vercel Serverless Function entrypoint (app = app)
 ├── database/
 │   └── db.py                 # SQLite & PostgreSQL ConnectionPool implementation
 ├── models/
@@ -88,19 +82,9 @@ resume-analyzer/
 │   ├── report_generator.py   # PDF report generator using FPDF2
 │   ├── llm_client.py         # Google Gemini AI integration wrapper
 │   └── file_handler.py       # File size & MIME magic-bytes validator
-├── tests/                    # Automated pytest suite (36 tests)
+├── tests/                    # Automated pytest suite (37 tests)
 └── requirements.txt          # Production dependencies
 ```
-
----
-
-## ☁️ Vercel Deployment Architecture
-
-The application is pre-configured for seamless Vercel serverless deployment:
-
-- **Writable Ephemeral Storage**: Detects `VERCEL` environment and routes database and file uploads to `/tmp` writable storage (`/tmp/uploads`, `/tmp/reports`, `/tmp/database`) to prevent read-only filesystem crash errors.
-- **WSGI Entrypoint**: Routes requests to `api/index.py` which loads the Flask application.
-- **Execution Timeout**: Configured `maxDuration: 60` in `vercel.json` to allow full AI generation and PDF compilation on serverless functions.
 
 ---
 
